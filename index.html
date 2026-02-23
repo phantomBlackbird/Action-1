@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Full Body View</title>
+    <title>Mini World Explorer - Full Body View with Gun</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -179,7 +179,7 @@
 <body>
     <!-- HUD Display - Matching the image format -->
     <div id="hud">
-        <div class="size">Player Size: <span style="color: #88ff88;">0.0072 scale</span></div>
+        <div class="size">Player Size: <span style="color: #88ff88;">0.0030 scale</span></div>
         <div class="position">Position: <span id="pos-x">0.0</span>, <span id="pos-z">0.0</span></div>
     </div>
     
@@ -187,7 +187,7 @@
     <div id="anim-status">IDLE</div>
     
     <!-- Debug Info -->
-    <div id="debug-info">Camera: 2x distance, 2x height</div>
+    <div id="debug-info">Camera: 2x distance, 2x height | Gun Attached</div>
 
     <!-- Mobile Touch Controls -->
     <div id="touch-controls">
@@ -206,8 +206,11 @@
     <a-scene background="color: #87CEEB" shadow="type: pcfsoft">
         <!-- Assets -->
         <a-assets>
-            <!-- Tiny Player Model - Using Player.glb with 0.0072 scale -->
+            <!-- Tiny Player Model - Using Player.glb -->
             <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
+            
+            <!-- Gun Model - Mpsd.glb -->
+            <a-asset-item id="gun-model" src="Mpsd.glb"></a-asset-item>
             
             <!-- Environment Textures -->
             <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg" crossorigin="anonymous">
@@ -215,17 +218,26 @@
         
         <!-- Third Person Camera Rig -->
         <a-entity id="camera-rig" position="0 1 0">
-            <!-- Tiny Player with Animation Mixer - Scale 0.0072 as requested -->
+            <!-- Tiny Player with Animation Mixer -->
             <a-entity id="player" position="0 0 0">
                 <a-gltf-model id="player-model-instance" src="#player-model" scale="0.0030 0.0030 0.0030" position="0 0 0" animation-mixer="clip: idle; loop: repeat; timeScale: 1;"></a-gltf-model>
+                
+                <!-- Gun Model attached to player's right hand -->
+                <!-- Position and rotation adjusted for the gun to be held properly -->
+                <a-gltf-model 
+                    id="gun-model-instance" 
+                    src="#gun-model" 
+                    scale="0.0030 0.0030 0.0030" 
+                    position="0.015 0.04 0.005" 
+                    rotation="0 90 0"
+                    shadow="cast: true; receive: true">
+                </a-gltf-model>
                 
                 <!-- Simple player shadow (scaled proportionally) -->
                 <a-circle position="0 -0.02 0" rotation="-90 0 0" radius="0.02" color="#333" material="opacity: 0.3; transparent: true"></a-circle>
             </a-entity>
             
             <!-- Camera positioned TWICE as far and TWICE as high to show entire player -->
-            <!-- Original was: position="0 0.15 0.3" -->
-            <!-- New: position="0 0.3 0.6" (2x height, 2x distance) -->
             <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.3 0.6" rotation="0 0 0"></a-camera>
         </a-entity>
         
@@ -277,8 +289,8 @@
         let lastMovementTime = Date.now();
         let movementThreshold = 100; // ms before considering idle
         
-        // Movement speed adjusted for tiny player (0.0072 scale)
-        let moveSpeed = 0.02; // Reduced for smaller scale
+        // Movement speed adjusted for tiny player
+        let moveSpeed = 0.02; 
         const walkSpeed = 0.015;
         const runSpeed = 0.025;
         
@@ -299,8 +311,9 @@
         const cameraRig = document.getElementById('camera-rig');
         const camera = document.getElementById('camera');
         const playerModel = document.getElementById('player-model-instance');
+        const gunModel = document.getElementById('gun-model-instance');
         
-        // Animation mapping based on your gLTF viewer
+        // Animation mapping
         const animationMap = {
             't-pose': 't-pose',
             'run-forward': 'run-forward',
@@ -373,7 +386,7 @@
         function setAnimation(animName) {
             if (!playerModel) return;
             
-            // Update UI - Uppercase as in the image
+            // Update UI
             let displayName = animName.toUpperCase();
             if (animName === 'idle') displayName = 'IDLE';
             else if (animName.includes('run')) displayName = 'RUNNING';
@@ -445,19 +458,19 @@
             }
         }
         
-        // Jump Function with proper physics (adjusted for 0.0072 scale)
+        // Jump Function
         function jump() {
             if (isJumping) return;
             
             let pos = cameraRig.getAttribute('position');
-            if (pos.y <= 0.08) { // Ground level check adjusted for smaller scale
+            if (pos.y <= 0.08) {
                 isJumping = true;
                 setAnimation('jump');
                 
                 let jumpStartTime = Date.now();
                 let startY = pos.y;
-                const jumpHeight = 0.06; // Reduced for smaller scale
-                const jumpDuration = 400; // ms
+                const jumpHeight = 0.06;
+                const jumpDuration = 400;
                 
                 function jumpAnimation() {
                     let elapsed = Date.now() - jumpStartTime;
@@ -468,7 +481,7 @@
                         pos.y = startY;
                         cameraRig.setAttribute('position', pos);
                         isJumping = false;
-                        updateMovementAnimation(); // Return to appropriate animation
+                        updateMovementAnimation();
                         return;
                     }
                     
@@ -484,10 +497,19 @@
             }
         }
         
-        // Shoot function
+        // Shoot function with gun animation
         function shoot() {
             if (isJumping) return;
             setAnimation('shoot-rifle');
+            
+            // Optional: Add muzzle flash effect here
+            if (gunModel) {
+                // You could temporarily change gun color or add a flash
+                gunModel.setAttribute('material', 'emissive', '#FF5500');
+                setTimeout(() => {
+                    gunModel.setAttribute('material', 'emissive', '#000000');
+                }, 100);
+            }
         }
         
         // Throw grenade function
@@ -496,7 +518,7 @@
             setAnimation('throw-grenade');
         }
         
-        // Move player based on joystick (adjusted for 0.0072 scale)
+        // Move player based on joystick
         function movePlayer() {
             if (!gameRunning || !joystickActive || isJumping) return;
             
@@ -587,9 +609,9 @@
         
         // Initialize when scene loads
         scene.addEventListener('loaded', () => {
-            console.log('Scene loaded - Tiny player with 0.0072 scale, camera 2x distance/height!');
+            console.log('Scene loaded - Player with gun attached!');
             
-            // Set initial position (adjusted for smaller scale)
+            // Set initial position
             cameraRig.setAttribute('position', { x: 0, y: 0.06, z: 0 });
             
             // Set initial animation
@@ -605,7 +627,14 @@
         if (playerModel) {
             playerModel.addEventListener('error', (e) => {
                 console.error('Failed to load Player.glb! Please make sure the file is in the same directory.');
-                animStatusEl.textContent = '⚠️ MODEL MISSING';
+                animStatusEl.textContent = '⚠️ PLAYER MISSING';
+            });
+        }
+        
+        if (gunModel) {
+            gunModel.addEventListener('error', (e) => {
+                console.error('Failed to load Mpsd.glb! Please make sure the file is in the same directory.');
+                animStatusEl.textContent = '⚠️ GUN MISSING';
             });
         }
         
@@ -632,4 +661,4 @@
         scene.addEventListener('loaded', createFloatingParticles);
     </script>
 </body>
-</html>
+    </html>
