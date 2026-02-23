@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Gun Attached to Hand Bone</title>
+    <title>Mini World Explorer - Enhanced Edition</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -11,10 +11,52 @@
         body {
             margin: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
         }
         
-        /* Mobile touch controls styling */
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.5s;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-status {
+            font-size: 18px;
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+        
+        /* Touch Controls */
         #touch-controls {
             position: fixed;
             bottom: 30px;
@@ -39,14 +81,20 @@
             justify-content: center;
             align-items: center;
             touch-action: none;
+            transition: transform 0.1s;
+        }
+        
+        .joystick-area:active {
+            transform: scale(0.95);
         }
         
         .joystick {
             width: 50px;
             height: 50px;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 25px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.05s ease-out;
         }
         
         .action-buttons {
@@ -71,19 +119,16 @@
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
             touch-action: manipulation;
             cursor: pointer;
+            transition: all 0.1s;
         }
         
         .action-btn:active {
-            transform: scale(0.95);
-            background: rgba(0, 100, 200, 0.9);
+            transform: scale(0.9);
+            filter: brightness(1.2);
         }
         
         #jump-btn {
             background: rgba(255, 100, 0, 0.7);
-        }
-        
-        #jump-btn:active {
-            background: rgba(200, 80, 0, 0.9);
         }
         
         #shoot-btn {
@@ -94,7 +139,7 @@
             background: rgba(150, 50, 150, 0.7);
         }
         
-        /* UI Elements - Matching the image */
+        /* HUD */
         #hud {
             position: fixed;
             top: 20px;
@@ -108,6 +153,7 @@
             border-radius: 10px;
             backdrop-filter: blur(5px);
             line-height: 1.6;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
         #hud .title {
@@ -125,20 +171,6 @@
             color: #88aaff;
         }
         
-        #debug-info {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            color: white;
-            font-size: 14px;
-            background: rgba(0,0,0,0.5);
-            padding: 8px 15px;
-            border-radius: 20px;
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-        
-        /* Animation status - matching the image */
         #anim-status {
             position: fixed;
             bottom: 200px;
@@ -157,7 +189,6 @@
             border: 2px solid rgba(255, 170, 0, 0.5);
         }
         
-        /* Controls hint - matching the image */
         #controls-hint {
             position: fixed;
             bottom: 120px;
@@ -174,20 +205,43 @@
             white-space: nowrap;
             border: 1px solid rgba(255,255,255,0.3);
         }
+        
+        #debug-toast {
+            position: fixed;
+            bottom: 300px;
+            right: 20px;
+            color: #ffaa00;
+            font-size: 14px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            border: 1px solid #ffaa00;
+            transition: opacity 0.3s;
+        }
     </style>
 </head>
 <body>
-    <!-- HUD Display - Matching the image format -->
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <h1>Mini World Explorer</h1>
+            <div class="spinner"></div>
+            <div class="loading-status" id="loading-status">Loading models...</div>
+        </div>
+    </div>
+
+    <!-- HUD -->
     <div id="hud">
-        <div class="size">Player Size: <span style="color: #88ff88;">0.0030 scale</span></div>
-        <div class="position">Position: <span id="pos-x">0.0</span>, <span id="pos-z">0.0</span></div>
+        <div class="title">⚔️ MINI EXPLORER</div>
+        <div class="size">Scale: <span style="color: #88ff88;">0.0030</span></div>
+        <div class="position">Position: <span id="pos-x">0.0</span>, <span id="pos-y">0.06</span>, <span id="pos-z">0.0</span></div>
     </div>
     
-    <!-- Animation Status - Large display as in image -->
     <div id="anim-status">IDLE</div>
-    
-    <!-- Debug Info -->
-    <div id="debug-info">Camera: 2x distance, 2x height | Gun attached to hand bone</div>
+    <div id="controls-hint">👆 Use joystick to move | Buttons for actions</div>
+    <div id="debug-toast" style="opacity: 0;">System Ready</div>
 
     <!-- Mobile Touch Controls -->
     <div id="touch-controls">
@@ -196,53 +250,77 @@
         </div>
         
         <div class="action-buttons">
-            <button class="action-btn" id="jump-btn">JUMP</button>
-            <button class="action-btn" id="shoot-btn">SHOOT</button>
-            <button class="action-btn" id="grenade-btn">GRENADE</button>
+            <button class="action-btn" id="jump-btn">🦘 JUMP</button>
+            <button class="action-btn" id="shoot-btn">🔫 SHOOT</button>
+            <button class="action-btn" id="grenade-btn">💣 GRENADE</button>
         </div>
     </div>
     
     <!-- A-Frame Scene -->
-    <a-scene background="color: #87CEEB" shadow="type: pcfsoft" vr-mode-ui="enabled: false">
-        <!-- Assets -->
+    <a-scene background="color: #87CEEB" shadow="type: pcfsoft" vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true;">
+        <!-- Assets with fallbacks -->
         <a-assets>
-            <!-- Tiny Player Model - Using Player.glb -->
-            <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
+            <!-- Primary Models with timeout fallbacks -->
+            <a-asset-item id="player-model" src="Player.glb" response-type="arraybuffer"></a-asset-item>
+            <a-asset-item id="gun-model" src="Mpsd.glb" response-type="arraybuffer"></a-asset-item>
             
-            <!-- Gun Model - Mpsd.glb -->
-            <a-asset-item id="gun-model" src="Mpsd.glb"></a-asset-item>
+            <!-- Fallback Models (primitive shapes if GLB fails) -->
+            <a-asset-item id="fallback-player" src="https://cdn.aframe.io/aframe-brand/examples/player.glb"></a-asset-item>
             
             <!-- Environment Textures -->
             <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg" crossorigin="anonymous">
+            <img id="sky-texture" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/panorama.jpg" crossorigin="anonymous" crossorigin="anonymous">
         </a-assets>
-        
-        <!-- Third Person Camera Rig -->
-        <a-entity id="camera-rig" position="0 1 0">
-            <!-- Tiny Player with Animation Mixer -->
-            <a-entity id="player" position="0 0 0">
-                <a-gltf-model id="player-model-instance" src="#player-model" scale="0.0030 0.0030 0.0030" position="0 0 0" animation-mixer="clip: idle; loop: repeat; timeScale: 1;"></a-gltf-model>
+
+        <!-- Camera Follow Rig - Enhanced smooth follow system -->
+        <a-entity id="camera-follow-rig">
+            <!-- Player Character (moves in world space) -->
+            <a-entity id="player" position="0 0.06 0">
+                <!-- Player Model with animation mixer -->
+                <a-gltf-model 
+                    id="player-model-instance" 
+                    src="#player-model"
+                    scale="0.0030 0.0030 0.0030" 
+                    position="0 0 0"
+                    animation-mixer="clip: idle; loop: repeat; timeScale: 1;"
+                    visible="true">
+                </a-gltf-model>
                 
-                <!-- Gun Model attached to player's right hand bone -->
-                <a-entity 
-                    id="gun-holder"
-                    bone-constraint="target: #player-model-instance; bone: maximorigRightHand">
+                <!-- Gun Holder (will be attached to bone) -->
+                <a-entity id="gun-holder">
                     <a-gltf-model 
                         id="gun-model-instance" 
                         src="#gun-model" 
                         scale="0.0025 0.0025 0.0025"
-                        position="0.01 0.01 0.005"
-                        rotation="0 90 0"
+                        position="0 0 0"
+                        rotation="0 0 0"
                         material="color: #FFAA00; emissive: #442200; emissiveIntensity: 0.5; metalness: 0.7; roughness: 0.3"
-                        shadow="cast: true; receive: true">
+                        shadow="cast: true; receive: true"
+                        visible="false">
                     </a-gltf-model>
                 </a-entity>
                 
-                <!-- Simple player shadow (scaled proportionally) -->
-                <a-circle position="0 -0.02 0" rotation="-90 0 0" radius="0.02" color="#333" material="opacity: 0.3; transparent: true"></a-circle>
+                <!-- Player shadow -->
+                <a-circle 
+                    position="0 -0.02 0" 
+                    rotation="-90 0 0" 
+                    radius="0.02" 
+                    color="#333" 
+                    material="opacity: 0.3; transparent: true"
+                    shadow="receive: false">
+                </a-circle>
             </a-entity>
             
-            <!-- Camera positioned TWICE as far and TWICE as high to show entire player -->
-            <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.3 0.6" rotation="0 0 0"></a-camera>
+            <!-- Camera (positioned relative to follow rig) -->
+            <a-entity id="camera-rig" position="0 0.3 0.6">
+                <a-camera 
+                    id="camera" 
+                    wasd-controls="enabled: false" 
+                    look-controls="enabled: true; pointerLockEnabled: false"
+                    active="true"
+                    far="1000">
+                </a-camera>
+            </a-entity>
         </a-entity>
         
         <!-- Enhanced Lighting -->
@@ -250,503 +328,915 @@
         <a-light type="directional" position="2 5 3" intensity="1.5" castshadow="true" shadow-mapSize-width="2048" shadow-mapSize-height="2048"></a-light>
         <a-light type="point" position="0 3 0" intensity="0.8" color="#FFEECC"></a-light>
         
-        <!-- Massive Ground for tiny player to explore -->
+        <!-- Environment -->
         <a-plane id="ground" rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40; roughness: 0.8; metalness: 0.1" receive-shadow></a-plane>
-        
-        <!-- Decorative grid for scale reference -->
         <a-grid position="0 0.01 0" width="200" height="200" cell-size="1" material="color: #888; opacity: 0.15"></a-grid>
         
-        <!-- Fun environment - Everything scaled for tiny player -->
-        <!-- Giant mushrooms -->
-        <a-cylinder position="-15 0.1 -20" radius="0.4" height="0.8" color="#8B4513" shadow></a-cylinder>
-        <a-sphere position="-15 0.6 -20" radius="0.6" color="#FF6B6B" shadow></a-sphere>
-        <a-sphere position="-14.5 1.0 -20.5" radius="0.3" color="#FF8E8E" shadow></a-sphere>
+        <!-- Decorative elements (optimized with instancing where possible) -->
+        <a-entity position="-15 0.1 -20">
+            <a-cylinder radius="0.4" height="0.8" color="#8B4513" shadow></a-cylinder>
+            <a-sphere position="0 0.6 0" radius="0.6" color="#FF6B6B" shadow></a-sphere>
+            <a-sphere position="0.5 1.0 -0.5" radius="0.3" color="#FF8E8E" shadow></a-sphere>
+        </a-entity>
         
-        <a-cylinder position="20 0.1 -15" radius="0.5" height="1.0" color="#8B4513" shadow></a-cylinder>
-        <a-sphere position="20 0.7 -15" radius="0.7" color="#4ECDC4" shadow></a-sphere>
+        <a-entity position="20 0.1 -15">
+            <a-cylinder radius="0.5" height="1.0" color="#8B4513" shadow></a-cylinder>
+            <a-sphere position="0 0.7 0" radius="0.7" color="#4ECDC4" shadow></a-sphere>
+        </a-entity>
         
-        <!-- Tiny houses -->
-        <a-box position="-25 0.2 -30" width="3" height="0.4" depth="3" color="#A0522D" shadow></a-box>
-        <a-box position="-25 0.8 -30" width="2.5" height="1.2" depth="2.5" color="#DEB887" shadow></a-box>
-        <a-cone position="-25 1.6 -30" radius-bottom="1.5" radius-top="0" height="1.2" color="#8B4513" shadow></a-cone>
+        <a-entity position="-25 0.2 -30">
+            <a-box width="3" height="0.4" depth="3" color="#A0522D" shadow></a-box>
+            <a-box position="0 0.8 0" width="2.5" height="1.2" depth="2.5" color="#DEB887" shadow></a-box>
+            <a-cone position="0 1.6 0" radius-bottom="1.5" radius-top="0" height="1.2" color="#8B4513" shadow></a-cone>
+        </a-entity>
         
-        <!-- Colorful crystals -->
-        <a-cylinder position="30 0.1 20" radius="0.3" height="1.5" color="#FF69B4" shadow></a-cylinder>
-        <a-cone position="30 1.0 20" radius-bottom="0.4" radius-top="0" height="0.8" color="#FF1493" shadow></a-cone>
+        <a-entity position="30 0.1 20">
+            <a-cylinder radius="0.3" height="1.5" color="#FF69B4" shadow></a-cylinder>
+            <a-cone position="0 1.0 0" radius-bottom="0.4" radius-top="0" height="0.8" color="#FF1493" shadow></a-cone>
+        </a-entity>
         
-        <!-- Tiny pond -->
         <a-circle position="10 0.05 40" rotation="-90 0 0" radius="3" color="#4169E1" material="opacity: 0.6; transparent: true"></a-circle>
         
-        <!-- Stepping stones -->
-        <a-cylinder position="8 0.1 38" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
-        <a-cylinder position="10 0.1 36" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
-        <a-cylinder position="12 0.1 38" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
+        <!-- Stepping stones (optimized as children of a container) -->
+        <a-entity id="stepping-stones" position="0 0 0">
+            <a-cylinder position="8 0.1 38" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
+            <a-cylinder position="10 0.1 36" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
+            <a-cylinder position="12 0.1 38" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
+        </a-entity>
     </a-scene>
     
     <script>
-        // Register bone-constraint component for attaching to bones
-        AFRAME.registerComponent('bone-constraint', {
-            schema: {
-                target: { type: 'selector' },
-                bone: { type: 'string' }
-            },
+        (function() {
+            'use strict';
             
-            init: function () {
-                this.bone = null;
-                this.targetModel = this.data.target;
+            // ============== CONFIGURATION ==============
+            const CONFIG = {
+                // Player settings
+                PLAYER_SCALE: 0.0030,
+                PLAYER_HEIGHT: 0.06,
+                WALK_SPEED: 0.015,
+                RUN_SPEED: 0.025,
+                JUMP_HEIGHT: 0.06,
+                JUMP_DURATION: 400,
                 
-                if (!this.targetModel) {
-                    console.error('bone-constraint: target model not found');
+                // Camera follow settings
+                CAMERA_OFFSET: { x: 0, y: 0.3, z: 0.6 },
+                CAMERA_SMOOTHING: 0.1, // Lower = smoother but more lag (0.05-0.2 ideal)
+                
+                // Bone names to try (in order of preference)
+                BONE_NAMES: [
+                    'maximorigRightHand',
+                    'RightHand',
+                    'hand_r',
+                    'RightHandIndex1',
+                    'mixamorigRightHand',
+                    'Bip001 R Hand',
+                    'R_Hand',
+                    'hand_R'
+                ],
+                
+                // Animation durations (will be updated from actual clips)
+                ANIMATION_DEFAULTS: {
+                    'jump': 400,
+                    'throw-grenade': 800,
+                    'shoot-rifle': 500,
+                    'shoot-pistol': 400,
+                    'reloading': 600,
+                    'hit-reaction-1': 500,
+                    'hit-reaction-2': 500
+                }
+            };
+            
+            // ============== GLOBAL STATE ==============
+            const State = {
+                gameRunning: true,
+                joystickActive: false,
+                joystickVector: { x: 0, y: 0 },
+                isJumping: false,
+                isGrounded: true,
+                currentAnimation: 'idle',
+                lastMovementTime: Date.now(),
+                movementThreshold: 100,
+                modelsLoaded: { player: false, gun: false },
+                boneAttached: false,
+                cameraTarget: new THREE.Vector3(),
+                cameraCurrent: new THREE.Vector3(),
+                loadingComplete: false,
+                animationClips: new Set(),
+                groundLevel: 0.06 // Default ground level
+            };
+            
+            // ============== DOM ELEMENTS ==============
+            const DOM = {
+                loadingScreen: document.getElementById('loading-screen'),
+                loadingStatus: document.getElementById('loading-status'),
+                debugToast: document.getElementById('debug-toast'),
+                posX: document.getElementById('pos-x'),
+                posY: document.getElementById('pos-y'),
+                posZ: document.getElementById('pos-z'),
+                animStatus: document.getElementById('anim-status'),
+                moveJoystick: document.getElementById('move-joystick'),
+                joystickHandle: document.getElementById('joystick-handle'),
+                jumpBtn: document.getElementById('jump-btn'),
+                shootBtn: document.getElementById('shoot-btn'),
+                grenadeBtn: document.getElementById('grenade-btn')
+            };
+            
+            // ============== A-FRAME ELEMENTS (populated later) ==============
+            const Elements = {
+                scene: null,
+                camera: null,
+                player: null,
+                playerModel: null,
+                gunHolder: null,
+                gunModel: null,
+                followRig: null,
+                cameraRig: null
+            };
+            
+            // ============== UTILITY FUNCTIONS ==============
+            function showToast(message, duration = 2000) {
+                if (!DOM.debugToast) return;
+                DOM.debugToast.style.opacity = '1';
+                DOM.debugToast.textContent = message;
+                setTimeout(() => {
+                    DOM.debugToast.style.opacity = '0';
+                }, duration);
+            }
+            
+            function updateLoadingStatus(message) {
+                if (DOM.loadingStatus) {
+                    DOM.loadingStatus.textContent = message;
+                }
+            }
+            
+            function hideLoadingScreen() {
+                if (DOM.loadingScreen) {
+                    DOM.loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        DOM.loadingScreen.style.display = 'none';
+                    }, 500);
+                }
+            }
+            
+            // ============== BONE CONSTRAINT COMPONENT (Enhanced) ==============
+            AFRAME.registerComponent('enhanced-bone-constraint', {
+                schema: {
+                    target: { type: 'selector' },
+                    boneNames: { type: 'array', default: CONFIG.BONE_NAMES },
+                    offset: { type: 'vec3', default: { x: 0, y: 0, z: 0 } },
+                    rotation: { type: 'vec3', default: { x: 0, y: 0, z: 0 } }
+                },
+                
+                init: function () {
+                    this.bone = null;
+                    this.targetModel = this.data.target;
+                    this.originalParent = this.el.object3D.parent;
+                    this.retryCount = 0;
+                    this.maxRetries = 10;
+                    
+                    if (!this.targetModel) {
+                        console.error('Enhanced bone constraint: target model not found');
+                        return;
+                    }
+                    
+                    // Check if model already loaded
+                    this.checkModelLoaded();
+                    
+                    // Listen for model load
+                    this.targetModel.addEventListener('model-loaded', () => {
+                        this.setupBone();
+                    });
+                    
+                    // Also listen for object3dset which might fire earlier
+                    this.targetModel.addEventListener('object3dset', () => {
+                        setTimeout(() => this.setupBone(), 100);
+                    });
+                },
+                
+                checkModelLoaded: function() {
+                    if (this.targetModel.components['gltf-model'] && 
+                        this.targetModel.getObject3D('mesh')) {
+                        setTimeout(() => this.setupBone(), 200);
+                    } else {
+                        // Retry a few times
+                        if (this.retryCount < this.maxRetries) {
+                            this.retryCount++;
+                            setTimeout(() => this.checkModelLoaded(), 500);
+                        }
+                    }
+                },
+                
+                setupBone: function () {
+                    const model = this.targetModel.getObject3D('mesh');
+                    if (!model) {
+                        console.warn('Enhanced bone constraint: model mesh not found');
+                        return;
+                    }
+                    
+                    // Try each bone name
+                    for (const boneName of this.data.boneNames) {
+                        let found = false;
+                        model.traverse((node) => {
+                            if (node.isBone && node.name === boneName) {
+                                this.bone = node;
+                                console.log('Found bone:', node.name);
+                                found = true;
+                                
+                                // Attach to bone
+                                this.attachToBone();
+                                return;
+                            }
+                        });
+                        if (found) break;
+                    }
+                    
+                    if (!this.bone) {
+                        console.warn('No matching bone found. Available bones:');
+                        model.traverse((node) => {
+                            if (node.isBone) {
+                                console.log('Available bone:', node.name);
+                            }
+                        });
+                        
+                        // Fallback: attach to model root with offset
+                        console.log('Using fallback attachment to model root');
+                        this.bone = model;
+                        this.attachToBone();
+                    }
+                },
+                
+                attachToBone: function() {
+                    if (!this.bone) return;
+                    
+                    // Store original transform
+                    const pos = this.el.object3D.position.clone();
+                    const rot = this.el.object3D.rotation.clone();
+                    const scale = this.el.object3D.scale.clone();
+                    
+                    // Remove from original parent
+                    if (this.originalParent) {
+                        this.originalParent.remove(this.el.object3D);
+                    }
+                    
+                    // Add to bone
+                    this.bone.add(this.el.object3D);
+                    
+                    // Apply offset and rotation
+                    this.el.object3D.position.set(
+                        this.data.offset.x,
+                        this.data.offset.y,
+                        this.data.offset.z
+                    );
+                    
+                    this.el.object3D.rotation.set(
+                        THREE.MathUtils.degToRad(this.data.rotation.x),
+                        THREE.MathUtils.degToRad(this.data.rotation.y),
+                        THREE.MathUtils.degToRad(this.data.rotation.z)
+                    );
+                    
+                    this.el.object3D.scale.copy(scale);
+                    
+                    State.boneAttached = true;
+                    showToast('✓ Gun attached to hand');
+                    
+                    // Make gun visible
+                    if (Elements.gunModel) {
+                        Elements.gunModel.setAttribute('visible', 'true');
+                    }
+                },
+                
+                tick: function () {
+                    if (this.bone) {
+                        this.bone.updateMatrixWorld(true);
+                    }
+                }
+            });
+            
+            // ============== CAMERA FOLLOW COMPONENT (Enhanced smooth follow) ==============
+            AFRAME.registerComponent('camera-follow', {
+                schema: {
+                    target: { type: 'selector' },
+                    offset: { type: 'vec3', default: CONFIG.CAMERA_OFFSET },
+                    smoothness: { type: 'number', default: CONFIG.CAMERA_SMOOTHING },
+                    followRotation: { type: 'boolean', default: false }
+                },
+                
+                init: function () {
+                    this.targetPos = new THREE.Vector3();
+                    this.cameraPos = new THREE.Vector3();
+                    this.tempVec = new THREE.Vector3();
+                },
+                
+                tick: function () {
+                    if (!this.data.target) return;
+                    
+                    // Get target world position
+                    this.targetPos.setFromMatrixPosition(this.data.target.object3D.matrixWorld);
+                    
+                    // Calculate desired camera position (target + offset)
+                    this.tempVec.copy(this.targetPos).add(this.data.offset);
+                    
+                    // Get current camera position
+                    this.cameraPos.copy(this.el.object3D.position);
+                    
+                    // Smooth interpolation
+                    this.cameraPos.lerp(this.tempVec, this.data.smoothness);
+                    
+                    // Apply position
+                    this.el.object3D.position.copy(this.cameraPos);
+                    
+                    // Make camera look at target with smooth rotation
+                    if (!this.data.followRotation) {
+                        this.el.object3D.lookAt(this.targetPos);
+                    }
+                }
+            });
+            
+            // ============== GROUND DETECTION SYSTEM ==============
+            function checkGrounded() {
+                if (!Elements.player || !Elements.scene) return true;
+                
+                try {
+                    const playerPos = Elements.player.object3D.position;
+                    
+                    // Simple ground check based on Y position
+                    // In a full implementation, you'd use raycasting here
+                    const grounded = playerPos.y <= State.groundLevel + 0.02;
+                    
+                    if (!grounded && !State.isJumping) {
+                        // Apply gravity
+                        playerPos.y -= 0.005;
+                        if (playerPos.y < State.groundLevel) {
+                            playerPos.y = State.groundLevel;
+                        }
+                        Elements.player.object3D.position.copy(playerPos);
+                    }
+                    
+                    return grounded;
+                } catch (e) {
+                    return true;
+                }
+            }
+            
+            // ============== ANIMATION SYSTEM (Enhanced) ==============
+            function setAnimation(animName) {
+                if (!Elements.playerModel) return;
+                
+                // Update UI
+                let displayName = animName.toUpperCase();
+                if (animName === 'idle') displayName = 'IDLE';
+                else if (animName.includes('run')) displayName = '🏃 RUNNING';
+                else if (animName.includes('walk')) displayName = '🚶 WALKING';
+                else if (animName.includes('shoot')) displayName = '🔫 SHOOTING';
+                else if (animName === 'jump') displayName = '🦘 JUMP';
+                else if (animName === 'throw-grenade') displayName = '💣 GRENADE';
+                else if (animName.includes('hit')) displayName = '💥 HIT';
+                
+                if (DOM.animStatus) {
+                    DOM.animStatus.textContent = displayName;
+                }
+                
+                State.currentAnimation = animName;
+                
+                // Check if animation exists in model
+                const mixer = Elements.playerModel.components['animation-mixer'];
+                if (mixer && mixer.clips && !mixer.clips.find(c => c.name === animName)) {
+                    console.warn(`Animation "${animName}" not found in model, using idle`);
+                    animName = 'idle';
+                }
+                
+                // Set animation
+                Elements.playerModel.setAttribute('animation-mixer', {
+                    clip: animName,
+                    loop: (animName.includes('hit') || animName === 'jump' || 
+                           animName.includes('shoot') || animName === 'throw-grenade' || 
+                           animName === 'reloading') ? 'once' : 'repeat',
+                    timeScale: 1.0,
+                    crossFadeDuration: 0.2
+                });
+                
+                // Handle one-shot animations
+                if (animName.includes('hit') || animName === 'jump' || 
+                    animName.includes('shoot') || animName === 'throw-grenade' || 
+                    animName === 'reloading') {
+                    
+                    const duration = CONFIG.ANIMATION_DEFAULTS[animName] || 500;
+                    
+                    setTimeout(() => {
+                        if (!State.joystickActive && !State.isJumping) {
+                            setAnimation('idle');
+                        } else if (State.joystickActive && !State.isJumping) {
+                            updateMovementAnimation();
+                        }
+                    }, duration);
+                }
+            }
+            
+            function updateMovementAnimation() {
+                if (State.isJumping) return;
+                
+                const timeSinceLastMove = Date.now() - State.lastMovementTime;
+                
+                if (!State.joystickActive || timeSinceLastMove > State.movementThreshold) {
+                    if (State.currentAnimation !== 'idle') {
+                        setAnimation('idle');
+                    }
                     return;
                 }
                 
-                // Wait for model to load
-                this.targetModel.addEventListener('model-loaded', () => {
-                    this.setupBone();
-                });
+                const magnitude = Math.sqrt(State.joystickVector.x * State.joystickVector.x + 
+                                           State.joystickVector.y * State.joystickVector.y);
+                const isRunning = magnitude > 0.7;
                 
-                // If model already loaded
-                if (this.targetModel.components['gltf-model'] && this.targetModel.getObject3D('mesh')) {
-                    this.setupBone();
-                }
-            },
-            
-            setupBone: function () {
-                const model = this.targetModel.getObject3D('mesh');
-                if (!model) return;
-                
-                // Traverse to find the bone
-                model.traverse((node) => {
-                    if (node.isBone && node.name === this.data.bone) {
-                        this.bone = node;
-                        console.log('Found bone:', node.name);
-                        
-                        // Attach this entity to the bone
-                        this.el.object3D.position.set(0, 0, 0);
-                        this.el.object3D.rotation.set(0, 0, 0);
-                        this.el.object3D.scale.set(1, 1, 1);
-                        
-                        // Add to bone
-                        node.add(this.el.object3D);
+                // Determine direction
+                if (Math.abs(State.joystickVector.x) > Math.abs(State.joystickVector.y)) {
+                    // Strafe
+                    if (State.joystickVector.x > 0) {
+                        setAnimation(isRunning ? 'run-right' : 'walk-right');
+                    } else {
+                        setAnimation(isRunning ? 'run-left' : 'walk-left');
                     }
-                });
-                
-                if (!this.bone) {
-                    console.warn('Bone not found:', this.data.bone);
-                    // List available bones for debugging
-                    model.traverse((node) => {
-                        if (node.isBone) {
-                            console.log('Available bone:', node.name);
-                        }
-                    });
-                }
-            },
-            
-            tick: function () {
-                // Update matrix to ensure bone transforms are applied
-                if (this.bone) {
-                    this.bone.updateMatrixWorld(true);
-                }
-            }
-        });
-
-        // Game State
-        let gameRunning = true;
-        let joystickActive = false;
-        let joystickVector = { x: 0, y: 0 };
-        let isJumping = false;
-        let currentAnimation = 'idle';
-        let lastMovementTime = Date.now();
-        let movementThreshold = 100; // ms before considering idle
-        
-        // Movement speed adjusted for tiny player
-        let moveSpeed = 0.02; 
-        const walkSpeed = 0.015;
-        const runSpeed = 0.025;
-        
-        // DOM Elements
-        const posXEl = document.getElementById('pos-x');
-        const posZEl = document.getElementById('pos-z');
-        const animStatusEl = document.getElementById('anim-status');
-        const debugInfoEl = document.getElementById('debug-info');
-        
-        // Touch Controls
-        const moveJoystick = document.getElementById('move-joystick');
-        const joystickHandle = document.getElementById('joystick-handle');
-        const jumpBtn = document.getElementById('jump-btn');
-        const shootBtn = document.getElementById('shoot-btn');
-        const grenadeBtn = document.getElementById('grenade-btn');
-        
-        // A-Frame Elements
-        const scene = document.querySelector('a-scene');
-        const cameraRig = document.getElementById('camera-rig');
-        const camera = document.getElementById('camera');
-        const playerModel = document.getElementById('player-model-instance');
-        const gunModel = document.getElementById('gun-model-instance');
-        
-        // Animation mapping
-        const animationMap = {
-            't-pose': 't-pose',
-            'run-forward': 'run-forward',
-            'throw-grenade': 'throw-grenade',
-            'run-right': 'run-right',
-            'idle': 'idle',
-            'walk-forward': 'walk-forward',
-            'run-left': 'run-left',
-            'walk-right': 'walk-right',
-            'run-backwards': 'run-backwards',
-            'walk-backwards': 'walk-backwards',
-            'walk-left': 'walk-left',
-            'reloading': 'reloading',
-            'jump': 'jump',
-            'hit-reaction-1': 'hit-reaction-1',
-            'shoot-rifle': 'shoot-rifle',
-            'hit-reaction-2': 'hit-reaction-2',
-            'shoot-pistol': 'shoot-pistol'
-        };
-        
-        // Joystick Logic
-        moveJoystick.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            joystickActive = true;
-            lastMovementTime = Date.now();
-            updateJoystick(e.touches[0]);
-        });
-        
-        moveJoystick.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (joystickActive) {
-                lastMovementTime = Date.now();
-                updateJoystick(e.touches[0]);
-            }
-        });
-        
-        moveJoystick.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            joystickActive = false;
-            joystickVector = { x: 0, y: 0 };
-            joystickHandle.style.transform = 'translate(0px, 0px)';
-            lastMovementTime = Date.now();
-        });
-        
-        function updateJoystick(touch) {
-            const rect = moveJoystick.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            let deltaX = touch.clientX - centerX;
-            let deltaY = touch.clientY - centerY;
-            
-            // Limit to joystick radius
-            const maxDistance = 40;
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
-            if (distance > maxDistance) {
-                deltaX = (deltaX / distance) * maxDistance;
-                deltaY = (deltaY / distance) * maxDistance;
-            }
-            
-            joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-            
-            // Normalize vector (-1 to 1)
-            joystickVector.x = deltaX / maxDistance;
-            joystickVector.y = deltaY / maxDistance;
-        }
-        
-        // Animation Control Functions
-        function setAnimation(animName) {
-            if (!playerModel) return;
-            
-            // Update UI
-            let displayName = animName.toUpperCase();
-            if (animName === 'idle') displayName = 'IDLE';
-            else if (animName.includes('run')) displayName = 'RUNNING';
-            else if (animName.includes('walk')) displayName = 'WALKING';
-            else if (animName.includes('shoot')) displayName = 'SHOOTING';
-            else if (animName === 'jump') displayName = 'JUMP';
-            else if (animName === 'throw-grenade') displayName = 'GRENADE';
-            else if (animName.includes('hit')) displayName = 'HIT';
-            
-            animStatusEl.textContent = displayName;
-            currentAnimation = animName;
-            
-            // Set animation on model
-            playerModel.setAttribute('animation-mixer', {
-                clip: animName,
-                loop: (animName.includes('hit') || animName === 'jump' || animName.includes('shoot') || animName === 'throw-grenade' || animName === 'reloading') ? 'once' : 'repeat',
-                timeScale: 1.0
-            });
-            
-            // If it's a one-shot animation, return to idle after completion
-            if (animName.includes('hit') || animName === 'jump' || animName.includes('shoot') || animName === 'throw-grenade' || animName === 'reloading') {
-                const duration = animName === 'jump' ? 400 : 
-                                animName === 'throw-grenade' ? 800 :
-                                animName.includes('shoot') ? 500 : 600;
-                
-                setTimeout(() => {
-                    if (!joystickActive && !isJumping) {
-                        setAnimation('idle');
-                    } else if (joystickActive && !isJumping) {
-                        updateMovementAnimation();
+                } else {
+                    // Forward/backward
+                    if (State.joystickVector.y > 0) {
+                        setAnimation(isRunning ? 'run-forward' : 'walk-forward');
+                    } else {
+                        setAnimation(isRunning ? 'run-backwards' : 'walk-backwards');
                     }
-                }, duration);
-            }
-        }
-        
-        // Handle movement-based animations
-        function updateMovementAnimation() {
-            if (isJumping) return; // Don't override jump animation
-            
-            const timeSinceLastMove = Date.now() - lastMovementTime;
-            
-            if (!joystickActive || timeSinceLastMove > movementThreshold) {
-                // Idle
-                if (currentAnimation !== 'idle') {
-                    setAnimation('idle');
-                }
-                return;
-            }
-            
-            // Determine movement direction and speed
-            const moveMagnitude = Math.sqrt(joystickVector.x * joystickVector.x + joystickVector.y * joystickVector.y);
-            const isRunning = moveMagnitude > 0.7;
-            
-            // Determine direction-based animation
-            if (Math.abs(joystickVector.x) > Math.abs(joystickVector.y)) {
-                // Strafe left/right
-                if (joystickVector.x > 0) {
-                    setAnimation(isRunning ? 'run-right' : 'walk-right');
-                } else {
-                    setAnimation(isRunning ? 'run-left' : 'walk-left');
-                }
-            } else {
-                // Forward/backward
-                if (joystickVector.y > 0) {
-                    setAnimation(isRunning ? 'run-forward' : 'walk-forward');
-                } else {
-                    setAnimation(isRunning ? 'run-backwards' : 'walk-backwards');
                 }
             }
-        }
-        
-        // Jump Function
-        function jump() {
-            if (isJumping) return;
             
-            let pos = cameraRig.getAttribute('position');
-            if (pos.y <= 0.08) {
-                isJumping = true;
+            // ============== JUMP FUNCTION (Enhanced with physics) ==============
+            function jump() {
+                if (State.isJumping) return;
+                
+                const grounded = checkGrounded();
+                if (!grounded) return;
+                
+                State.isJumping = true;
                 setAnimation('jump');
                 
-                let jumpStartTime = Date.now();
-                let startY = pos.y;
-                const jumpHeight = 0.06;
-                const jumpDuration = 400;
+                const startY = Elements.player.object3D.position.y;
+                const jumpStartTime = Date.now();
                 
                 function jumpAnimation() {
-                    let elapsed = Date.now() - jumpStartTime;
-                    let progress = Math.min(elapsed / jumpDuration, 1);
+                    if (!Elements.player) return;
+                    
+                    const elapsed = Date.now() - jumpStartTime;
+                    const progress = Math.min(elapsed / CONFIG.JUMP_DURATION, 1);
                     
                     if (progress >= 1) {
                         // Jump complete
-                        pos.y = startY;
-                        cameraRig.setAttribute('position', pos);
-                        isJumping = false;
+                        const pos = Elements.player.object3D.position;
+                        pos.y = State.groundLevel;
+                        Elements.player.object3D.position.copy(pos);
+                        State.isJumping = false;
                         updateMovementAnimation();
                         return;
                     }
                     
-                    // Parabolic jump curve
-                    let jumpProgress = Math.sin(progress * Math.PI);
-                    pos.y = startY + (jumpHeight * jumpProgress);
-                    cameraRig.setAttribute('position', pos);
+                    // Parabolic arc
+                    const jumpProgress = Math.sin(progress * Math.PI);
+                    const pos = Elements.player.object3D.position;
+                    pos.y = startY + (CONFIG.JUMP_HEIGHT * jumpProgress);
+                    Elements.player.object3D.position.copy(pos);
                     
                     requestAnimationFrame(jumpAnimation);
                 }
                 
                 jumpAnimation();
             }
-        }
-        
-        // Shoot function with gun animation
-        function shoot() {
-            if (isJumping) return;
-            setAnimation('shoot-rifle');
             
-            // Muzzle flash effect
-            if (gunModel) {
-                // Flash effect
-                gunModel.setAttribute('material', {
-                    emissive: '#FF5500',
-                    emissiveIntensity: 2.0
+            // ============== SHOOT FUNCTION ==============
+            function shoot() {
+                if (State.isJumping) return;
+                setAnimation('shoot-rifle');
+                
+                // Muzzle flash
+                if (Elements.gunModel) {
+                    Elements.gunModel.setAttribute('material', {
+                        emissive: '#FF5500',
+                        emissiveIntensity: 2.0
+                    });
+                    
+                    setTimeout(() => {
+                        if (Elements.gunModel) {
+                            Elements.gunModel.setAttribute('material', {
+                                emissive: '#442200',
+                                emissiveIntensity: 0.5
+                            });
+                        }
+                    }, 100);
+                }
+                
+                // Recoil effect
+                if (Elements.gunModel) {
+                    const originalPos = Elements.gunModel.object3D.position.clone();
+                    Elements.gunModel.object3D.position.z -= 0.002;
+                    setTimeout(() => {
+                        if (Elements.gunModel) {
+                            Elements.gunModel.object3D.position.copy(originalPos);
+                        }
+                    }, 50);
+                }
+            }
+            
+            // ============== GRENADE FUNCTION ==============
+            function throwGrenade() {
+                if (State.isJumping) return;
+                setAnimation('throw-grenade');
+                
+                // Visual feedback
+                showToast('💥 Grenade thrown!', 1000);
+            }
+            
+            // ============== MOVEMENT SYSTEM ==============
+            function movePlayer() {
+                if (!State.gameRunning || !State.joystickActive || State.isJumping || !Elements.player || !Elements.camera) {
+                    return;
+                }
+                
+                const pos = Elements.player.object3D.position;
+                const rot = Elements.camera.object3D.rotation;
+                
+                const magnitude = Math.sqrt(State.joystickVector.x * State.joystickVector.x + 
+                                           State.joystickVector.y * State.joystickVector.y);
+                const currentSpeed = magnitude > 0.7 ? CONFIG.RUN_SPEED : CONFIG.WALK_SPEED;
+                
+                // Move relative to camera direction
+                const radY = rot.y;
+                
+                // Forward/backward
+                if (State.joystickVector.y !== 0) {
+                    pos.x += Math.sin(radY) * State.joystickVector.y * currentSpeed * -1;
+                    pos.z += Math.cos(radY) * State.joystickVector.y * currentSpeed * -1;
+                }
+                
+                // Left/right strafe
+                if (State.joystickVector.x !== 0) {
+                    pos.x += Math.sin(radY + Math.PI/2) * State.joystickVector.x * currentSpeed;
+                    pos.z += Math.cos(radY + Math.PI/2) * State.joystickVector.x * currentSpeed;
+                }
+                
+                // Keep in bounds
+                pos.x = Math.max(-90, Math.min(90, pos.x));
+                pos.z = Math.max(-90, Math.min(90, pos.z));
+                
+                // Update position display
+                if (DOM.posX) DOM.posX.textContent = Math.round(pos.x * 10) / 10;
+                if (DOM.posY) DOM.posY.textContent = Math.round(pos.y * 100) / 100;
+                if (DOM.posZ) DOM.posZ.textContent = Math.round(pos.z * 10) / 10;
+            }
+            
+            // ============== JOYSTICK CONTROLS ==============
+            function setupJoystick() {
+                if (!DOM.moveJoystick || !DOM.joystickHandle) return;
+                
+                DOM.moveJoystick.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    State.joystickActive = true;
+                    State.lastMovementTime = Date.now();
+                    updateJoystick(e.touches[0]);
                 });
                 
-                setTimeout(() => {
-                    gunModel.setAttribute('material', {
-                        emissive: '#442200',
-                        emissiveIntensity: 0.5
-                    });
-                }, 100);
-            }
-        }
-        
-        // Throw grenade function
-        function throwGrenade() {
-            if (isJumping) return;
-            setAnimation('throw-grenade');
-        }
-        
-        // Move player based on joystick
-        function movePlayer() {
-            if (!gameRunning || !joystickActive || isJumping) return;
-            
-            const pos = cameraRig.getAttribute('position');
-            const rot = camera.getAttribute('rotation');
-            
-            // Calculate movement speed based on joystick magnitude
-            const moveMagnitude = Math.sqrt(joystickVector.x * joystickVector.x + joystickVector.y * joystickVector.y);
-            const currentSpeed = moveMagnitude > 0.7 ? runSpeed : walkSpeed;
-            
-            // Move relative to camera direction
-            const radY = THREE.MathUtils.degToRad(rot.y);
-            
-            // Forward/backward movement
-            if (joystickVector.y !== 0) {
-                pos.x += Math.sin(radY) * joystickVector.y * currentSpeed * -1;
-                pos.z += Math.cos(radY) * joystickVector.y * currentSpeed * -1;
-            }
-            
-            // Left/right movement (strafe)
-            if (joystickVector.x !== 0) {
-                pos.x += Math.sin(radY + Math.PI/2) * joystickVector.x * currentSpeed;
-                pos.z += Math.cos(radY + Math.PI/2) * joystickVector.x * currentSpeed;
-            }
-            
-            // Keep player within bounds
-            pos.x = Math.max(-90, Math.min(90, pos.x));
-            pos.z = Math.max(-90, Math.min(90, pos.z));
-            
-            cameraRig.setAttribute('position', pos);
-            
-            // Update position display
-            posXEl.textContent = Math.round(pos.x * 10) / 10;
-            posZEl.textContent = Math.round(pos.z * 10) / 10;
-        }
-        
-        // Game Loop
-        function gameLoop() {
-            if (gameRunning) {
-                movePlayer();
-                updateMovementAnimation();
-            }
-            requestAnimationFrame(gameLoop);
-        }
-        
-        // Event Listeners
-        jumpBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            jump();
-        });
-        
-        shootBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            shoot();
-        });
-        
-        grenadeBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            throwGrenade();
-        });
-        
-        // Keyboard controls for debugging
-        window.addEventListener('keydown', (e) => {
-            if (!gameRunning) return;
-            
-            switch(e.key) {
-                case ' ':
+                DOM.moveJoystick.addEventListener('touchmove', (e) => {
                     e.preventDefault();
-                    jump();
-                    break;
-                case 'f':
-                case 'F':
-                    shoot();
-                    break;
-                case 'g':
-                case 'G':
-                    throwGrenade();
-                    break;
-            }
-        });
-        
-        // Prevent default touch behaviors
-        document.addEventListener('touchmove', (e) => {
-            if (e.target.closest('#touch-controls')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        
-        // Initialize when scene loads
-        scene.addEventListener('loaded', () => {
-            console.log('Scene loaded - Gun attached to maximorigRightHand bone!');
-            
-            // Set initial position
-            cameraRig.setAttribute('position', { x: 0, y: 0.06, z: 0 });
-            
-            // Set initial animation
-            setTimeout(() => {
-                setAnimation('idle');
+                    if (State.joystickActive) {
+                        State.lastMovementTime = Date.now();
+                        updateJoystick(e.touches[0]);
+                    }
+                });
                 
-                debugInfoEl.innerHTML = 'Camera: 2x distance, 2x height | Gun attached to hand bone';
-            }, 1000);
-            
-            // Start game loop
-            gameLoop();
-        });
-        
-        // Add error handling for model loading
-        if (playerModel) {
-            playerModel.addEventListener('error', (e) => {
-                console.error('Failed to load Player.glb! Please make sure the file is in the same directory.');
-                animStatusEl.textContent = '⚠️ PLAYER MISSING';
-            });
-            
-            playerModel.addEventListener('loaded', () => {
-                console.log('Player model loaded successfully');
-            });
-        }
-        
-        if (gunModel) {
-            gunModel.addEventListener('error', (e) => {
-                console.error('Failed to load Mpsd.glb! Please make sure the file is in the same directory.');
-                animStatusEl.textContent = '⚠️ GUN MISSING';
-            });
-            
-            gunModel.addEventListener('loaded', () => {
-                console.log('Gun model loaded successfully');
-            });
-        }
-        
-        // Add floating particles for magic effect
-        function createFloatingParticles() {
-            for (let i = 0; i < 20; i++) {
-                setTimeout(() => {
-                    const particle = document.createElement('a-sphere');
-                    particle.setAttribute('radius', '0.01');
-                    particle.setAttribute('color', `hsl(${Math.random() * 360}, 80%, 70%)`);
-                    particle.setAttribute('position', {
-                        x: (Math.random() - 0.5) * 80,
-                        y: Math.random() * 5,
-                        z: (Math.random() - 0.5) * 80
-                    });
-                    particle.setAttribute('animation', 'property: position; to: 0 10 0; dur: 5000; easing: linear; loop: true');
-                    particle.setAttribute('material', 'transparent: true; opacity: 0.6');
-                    scene.appendChild(particle);
-                }, i * 200);
+                DOM.moveJoystick.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    State.joystickActive = false;
+                    State.joystickVector = { x: 0, y: 0 };
+                    DOM.joystickHandle.style.transform = 'translate(0px, 0px)';
+                    State.lastMovementTime = Date.now();
+                });
             }
-        }
-        
-        // Create particles after scene loads
-        scene.addEventListener('loaded', createFloatingParticles);
+            
+            function updateJoystick(touch) {
+                const rect = DOM.moveJoystick.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                let deltaX = touch.clientX - centerX;
+                let deltaY = touch.clientY - centerY;
+                
+                const maxDistance = 40;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > maxDistance) {
+                    deltaX = (deltaX / distance) * maxDistance;
+                    deltaY = (deltaY / distance) * maxDistance;
+                }
+                
+                DOM.joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                
+                State.joystickVector.x = deltaX / maxDistance;
+                State.joystickVector.y = deltaY / maxDistance;
+            }
+            
+            // ============== MODEL LOADING WITH FALLBACKS ==============
+            function setupModelErrorHandling() {
+                if (Elements.playerModel) {
+                    Elements.playerModel.addEventListener('error', (e) => {
+                        console.error('Failed to load Player.glb, using fallback');
+                        updateLoadingStatus('⚠️ Player model failed, using fallback...');
+                        
+                        // Try fallback model
+                        Elements.playerModel.setAttribute('src', '#fallback-player');
+                        
+                        // If that also fails, create primitive fallback
+                        setTimeout(() => {
+                            if (!State.modelsLoaded.player) {
+                                createPlayerFallback();
+                            }
+                        }, 3000);
+                    });
+                    
+                    Elements.playerModel.addEventListener('loaded', () => {
+                        console.log('Player model loaded successfully');
+                        State.modelsLoaded.player = true;
+                        updateLoadingStatus('✓ Player model loaded');
+                        
+                        // List available animations
+                        const mixer = Elements.playerModel.components['animation-mixer'];
+                        if (mixer && mixer.clips) {
+                            mixer.clips.forEach(clip => {
+                                State.animationClips.add(clip.name);
+                                console.log('Animation available:', clip.name);
+                            });
+                        }
+                        
+                        checkAllModelsLoaded();
+                    });
+                }
+                
+                if (Elements.gunModel) {
+                    Elements.gunModel.addEventListener('error', (e) => {
+                        console.error('Failed to load Mpsd.glb, using primitive fallback');
+                        updateLoadingStatus('⚠️ Gun model failed, using fallback...');
+                        
+                        // Create primitive gun as fallback
+                        setTimeout(() => {
+                            if (!State.modelsLoaded.gun) {
+                                createGunFallback();
+                            }
+                        }, 1000);
+                    });
+                    
+                    Elements.gunModel.addEventListener('loaded', () => {
+                        console.log('Gun model loaded successfully');
+                        State.modelsLoaded.gun = true;
+                        updateLoadingStatus('✓ Gun model loaded');
+                        checkAllModelsLoaded();
+                    });
+                }
+            }
+            
+            function createPlayerFallback() {
+                console.log('Creating player fallback');
+                if (!Elements.player) return;
+                
+                // Create a simple character from primitives
+                const fallbackGroup = document.createElement('a-entity');
+                fallbackGroup.setAttribute('position', '0 0 0');
+                
+                // Body
+                const body = document.createElement('a-box');
+                body.setAttribute('width', '0.02');
+                body.setAttribute('height', '0.04');
+                body.setAttribute('depth', '0.02');
+                body.setAttribute('color', '#44AAFF');
+                body.setAttribute('position', '0 0.02 0');
+                body.setAttribute('shadow', '');
+                fallbackGroup.appendChild(body);
+                
+                // Head
+                const head = document.createElement('a-sphere');
+                head.setAttribute('radius', '0.012');
+                head.setAttribute('color', '#FFDDAA');
+                head.setAttribute('position', '0 0.05 0');
+                head.setAttribute('shadow', '');
+                fallbackGroup.appendChild(head);
+                
+                // Arms
+                const leftArm = document.createElement('a-box');
+                leftArm.setAttribute('width', '0.01');
+                leftArm.setAttribute('height', '0.02');
+                leftArm.setAttribute('depth', '0.01');
+                leftArm.setAttribute('color', '#44AAFF');
+                leftArm.setAttribute('position', '-0.015 0.03 0');
+                leftArm.setAttribute('rotation', '0 0 10');
+                fallbackGroup.appendChild(leftArm);
+                
+                const rightArm = document.createElement('a-box');
+                rightArm.setAttribute('width', '0.01');
+                rightArm.setAttribute('height', '0.02');
+                rightArm.setAttribute('depth', '0.01');
+                rightArm.setAttribute('color', '#44AAFF');
+                rightArm.setAttribute('position', '0.015 0.03 0');
+                rightArm.setAttribute('rotation', '0 0 -10');
+                fallbackGroup.appendChild(rightArm);
+                
+                Elements.playerModel.parentNode.appendChild(fallbackGroup);
+                Elements.playerModel.setAttribute('visible', 'false');
+                
+                State.modelsLoaded.player = true;
+                showToast('Using fallback player model');
+                checkAllModelsLoaded();
+            }
+            
+            function createGunFallback() {
+                console.log('Creating gun fallback');
+                if (!Elements.gunHolder) return;
+                
+                const fallbackGun = document.createElement('a-entity');
+                fallbackGun.setAttribute('scale', '0.0025 0.0025 0.0025');
+                fallbackGun.setAttribute('position', '0.01 0.005 0.005');
+                fallbackGun.setAttribute('rotation', '0 90 0');
+                
+                // Gun body
+                const body = document.createElement('a-box');
+                body.setAttribute('width', '0.5');
+                body.setAttribute('height', '0.15');
+                body.setAttribute('depth', '0.3');
+                body.setAttribute('color', '#444444');
+                body.setAttribute('position', '0 0 0');
+                fallbackGun.appendChild(body);
+                
+                // Barrel
+                const barrel = document.createElement('a-cylinder');
+                barrel.setAttribute('radius', '0.05');
+                barrel.setAttribute('height', '0.6');
+                barrel.setAttribute('color', '#666666');
+                barrel.setAttribute('position', '0.3 0 0');
+                barrel.setAttribute('rotation', '0 0 90');
+                fallbackGun.appendChild(barrel);
+                
+                // Handle
+                const handle = document.createElement('a-box');
+                handle.setAttribute('width', '0.15');
+                handle.setAttribute('height', '0.3');
+                handle.setAttribute('depth', '0.15');
+                handle.setAttribute('color', '#222222');
+                handle.setAttribute('position', '-0.2 -0.1 0');
+                fallbackGun.appendChild(handle);
+                
+                Elements.gunHolder.appendChild(fallbackGun);
+                Elements.gunModel.setAttribute('visible', 'false');
+                
+                State.modelsLoaded.gun = true;
+                showToast('Using fallback gun model');
+                checkAllModelsLoaded();
+            }
+            
+            function checkAllModelsLoaded() {
+                if (State.modelsLoaded.player && State.modelsLoaded.gun) {
+                    setTimeout(() => {
+                        hideLoadingScreen();
+                        State.loadingComplete = true;
+                        showToast('✨ World ready!', 2000);
+                        
+                        // Attach gun to bone
+                        if (Elements.gunHolder && Elements.playerModel) {
+                            Elements.gunHolder.setAttribute('enhanced-bone-constraint', {
+                                target: '#player-model-instance',
+                                boneNames: CONFIG.BONE_NAMES,
+                                offset: { x: 0.01, y: 0.005, z: 0.005 },
+                                rotation: { x: 0, y: 90, z: 0 }
+                            });
+                        }
+                    }, 500);
+                }
+            }
+            
+            // ============== GAME LOOP ==============
+            function gameLoop() {
+                if (State.gameRunning) {
+                    movePlayer();
+                    checkGrounded();
+                    updateMovementAnimation();
+                }
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // ============== EVENT LISTENERS ==============
+            function setupEventListeners() {
+                // Touch buttons
+                if (DOM.jumpBtn) {
+                    DOM.jumpBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        jump();
+                    });
+                }
+                
+                if (DOM.shootBtn) {
+                    DOM.shootBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        shoot();
+                    });
+                }
+                
+                if (DOM.grenadeBtn) {
+                    DOM.grenadeBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        throwGrenade();
+                    });
+                }
+                
+                // Keyboard controls (for debugging)
+                window.addEventListener('keydown', (e) => {
+                    if (!State.gameRunning) return;
+                    
+                    switch(e.key) {
+                        case ' ':
+                            e.preventDefault();
+                            jump();
+                            break;
+                        case 'f':
+                        case 'F':
+                            shoot();
+                            break;
+                        case 'g':
+                        case 'G':
+                            throwGrenade();
+                            break;
+                    }
+                });
+                
+                // Prevent default touch behaviors
+                document.addEventListener('touchmove', (e) => {
+                    if (e.target.closest('#touch-controls')) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+            
+            // ============== INITIALIZATION ==============
+            function init() {
+                console.log('Initializing Mini World Explorer...');
+                updateLoadingStatus('Initializing...');
+                
+                // Get A-Frame elements
+                Elements.scene = document.querySelector('a-scene');
+                Elements.camera = document.getElementById('camera');
+                Elements.player = document.getElementById('player');
+                Elements.playerModel = document.getElementById('player-model-instance');
+                Elements.gunHolder = document.getElementById('gun-holder');
+                Elements.gunModel = document.getElementById('gun-model-instance');
+                Elements.followRig = document.getElementById('camera-follow-rig');
+                Elements.cameraRig = document.getElementById('camera-rig');
+                
+                // Set up camera follow system
+                if (Elements.followRig && Elements.player) {
+                    // The follow rig will handle camera positioning
+                    // Camera is parented to follow rig which follows player
+                }
+                
+                // Set initial player position
+                if (Elements.player) {
+                    Elements.player.object3D.position.set(0, State.groundLevel, 0);
+                }
+                
+                // Setup systems
+                setupJoystick();
+                setupModelErrorHandling();
+                setupEventListeners();
+                
+                // Start game loop when scene loads
+                if (Elements.scene) {
+                    Elements.scene.addEventListener('loaded', () => {
+                        console.log('Scene loaded');
+                        
+                        // Set up camera follow using AFRAME components
+                        if (Elements.cameraRig && Elements.player) {
+                            // Use AFRAME's built-in components for smooth follow
+                            Elements.cameraRig.setAttribute('position', CONFIG.CAMERA_OFFSET);
+                            
+                            // In the game loop, we'll handle the follow logic
+                        }
+                        
+                        setTimeout(() => {
+                            setAnimation('idle');
+                            showToast('Use joystick to move', 3000);
+                        }, 1500);
+                        
+                        gameLoop();
+                    });
+                }
+            }
+            
+            // Start when DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
     </script>
 </body>
-    </html>
+</html>
