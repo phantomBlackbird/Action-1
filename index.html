@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Full Body View with Gun</title>
+    <title>Mini World Explorer - Gun Attached to Hand Bone</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -187,7 +187,7 @@
     <div id="anim-status">IDLE</div>
     
     <!-- Debug Info -->
-    <div id="debug-info">Camera: 2x distance, 2x height | Gun Attached</div>
+    <div id="debug-info">Camera: 2x distance, 2x height | Gun attached to hand bone</div>
 
     <!-- Mobile Touch Controls -->
     <div id="touch-controls">
@@ -203,7 +203,7 @@
     </div>
     
     <!-- A-Frame Scene -->
-    <a-scene background="color: #87CEEB" shadow="type: pcfsoft">
+    <a-scene background="color: #87CEEB" shadow="type: pcfsoft" vr-mode-ui="enabled: false">
         <!-- Assets -->
         <a-assets>
             <!-- Tiny Player Model - Using Player.glb -->
@@ -222,16 +222,20 @@
             <a-entity id="player" position="0 0 0">
                 <a-gltf-model id="player-model-instance" src="#player-model" scale="0.0030 0.0030 0.0030" position="0 0 0" animation-mixer="clip: idle; loop: repeat; timeScale: 1;"></a-gltf-model>
                 
-                <!-- Gun Model attached to player's right hand -->
-                <!-- Position and rotation adjusted for the gun to be held properly -->
-                <a-gltf-model 
-                    id="gun-model-instance" 
-                    src="#gun-model" 
-                    scale="0.0080 0.0080 0.0080" 
-                    position="0.015 0.04 0.005" 
-                    rotation="0 90 0"
-                    shadow="cast: true; receive: true">
-                </a-gltf-model>
+                <!-- Gun Model attached to player's right hand bone -->
+                <a-entity 
+                    id="gun-holder"
+                    bone-constraint="target: #player-model-instance; bone: maximorigRightHand">
+                    <a-gltf-model 
+                        id="gun-model-instance" 
+                        src="#gun-model" 
+                        scale="0.0025 0.0025 0.0025"
+                        position="0.01 0.01 0.005"
+                        rotation="0 90 0"
+                        material="color: #FFAA00; emissive: #442200; emissiveIntensity: 0.5; metalness: 0.7; roughness: 0.3"
+                        shadow="cast: true; receive: true">
+                    </a-gltf-model>
+                </a-entity>
                 
                 <!-- Simple player shadow (scaled proportionally) -->
                 <a-circle position="0 -0.02 0" rotation="-90 0 0" radius="0.02" color="#333" material="opacity: 0.3; transparent: true"></a-circle>
@@ -242,9 +246,9 @@
         </a-entity>
         
         <!-- Enhanced Lighting -->
-        <a-light type="ambient" color="#fff" intensity="0.6"></a-light>
-        <a-light type="directional" position="2 5 3" intensity="1.2" castshadow="true" shadow-mapSize-width="2048" shadow-mapSize-height="2048"></a-light>
-        <a-light type="point" position="0 3 0" intensity="0.5" color="#FFEECC"></a-light>
+        <a-light type="ambient" color="#fff" intensity="0.8"></a-light>
+        <a-light type="directional" position="2 5 3" intensity="1.5" castshadow="true" shadow-mapSize-width="2048" shadow-mapSize-height="2048"></a-light>
+        <a-light type="point" position="0 3 0" intensity="0.8" color="#FFEECC"></a-light>
         
         <!-- Massive Ground for tiny player to explore -->
         <a-plane id="ground" rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40; roughness: 0.8; metalness: 0.1" receive-shadow></a-plane>
@@ -280,6 +284,72 @@
     </a-scene>
     
     <script>
+        // Register bone-constraint component for attaching to bones
+        AFRAME.registerComponent('bone-constraint', {
+            schema: {
+                target: { type: 'selector' },
+                bone: { type: 'string' }
+            },
+            
+            init: function () {
+                this.bone = null;
+                this.targetModel = this.data.target;
+                
+                if (!this.targetModel) {
+                    console.error('bone-constraint: target model not found');
+                    return;
+                }
+                
+                // Wait for model to load
+                this.targetModel.addEventListener('model-loaded', () => {
+                    this.setupBone();
+                });
+                
+                // If model already loaded
+                if (this.targetModel.components['gltf-model'] && this.targetModel.getObject3D('mesh')) {
+                    this.setupBone();
+                }
+            },
+            
+            setupBone: function () {
+                const model = this.targetModel.getObject3D('mesh');
+                if (!model) return;
+                
+                // Traverse to find the bone
+                model.traverse((node) => {
+                    if (node.isBone && node.name === this.data.bone) {
+                        this.bone = node;
+                        console.log('Found bone:', node.name);
+                        
+                        // Attach this entity to the bone
+                        this.el.object3D.position.set(0, 0, 0);
+                        this.el.object3D.rotation.set(0, 0, 0);
+                        this.el.object3D.scale.set(1, 1, 1);
+                        
+                        // Add to bone
+                        node.add(this.el.object3D);
+                    }
+                });
+                
+                if (!this.bone) {
+                    console.warn('Bone not found:', this.data.bone);
+                    // List available bones for debugging
+                    model.traverse((node) => {
+                        if (node.isBone) {
+                            console.log('Available bone:', node.name);
+                        }
+                    });
+                }
+            },
+            
+            tick: function () {
+                // Update matrix to ensure bone transforms are applied
+                if (this.bone) {
+                    this.bone.updateMatrixWorld(true);
+                }
+            }
+        });
+
         // Game State
         let gameRunning = true;
         let joystickActive = false;
@@ -298,6 +368,7 @@
         const posXEl = document.getElementById('pos-x');
         const posZEl = document.getElementById('pos-z');
         const animStatusEl = document.getElementById('anim-status');
+        const debugInfoEl = document.getElementById('debug-info');
         
         // Touch Controls
         const moveJoystick = document.getElementById('move-joystick');
@@ -502,12 +573,19 @@
             if (isJumping) return;
             setAnimation('shoot-rifle');
             
-            // Optional: Add muzzle flash effect here
+            // Muzzle flash effect
             if (gunModel) {
-                // You could temporarily change gun color or add a flash
-                gunModel.setAttribute('material', 'emissive', '#FF5500');
+                // Flash effect
+                gunModel.setAttribute('material', {
+                    emissive: '#FF5500',
+                    emissiveIntensity: 2.0
+                });
+                
                 setTimeout(() => {
-                    gunModel.setAttribute('material', 'emissive', '#000000');
+                    gunModel.setAttribute('material', {
+                        emissive: '#442200',
+                        emissiveIntensity: 0.5
+                    });
                 }, 100);
             }
         }
@@ -609,7 +687,7 @@
         
         // Initialize when scene loads
         scene.addEventListener('loaded', () => {
-            console.log('Scene loaded - Player with gun attached!');
+            console.log('Scene loaded - Gun attached to maximorigRightHand bone!');
             
             // Set initial position
             cameraRig.setAttribute('position', { x: 0, y: 0.06, z: 0 });
@@ -617,6 +695,8 @@
             // Set initial animation
             setTimeout(() => {
                 setAnimation('idle');
+                
+                debugInfoEl.innerHTML = 'Camera: 2x distance, 2x height | Gun attached to hand bone';
             }, 1000);
             
             // Start game loop
@@ -629,12 +709,20 @@
                 console.error('Failed to load Player.glb! Please make sure the file is in the same directory.');
                 animStatusEl.textContent = '⚠️ PLAYER MISSING';
             });
+            
+            playerModel.addEventListener('loaded', () => {
+                console.log('Player model loaded successfully');
+            });
         }
         
         if (gunModel) {
             gunModel.addEventListener('error', (e) => {
                 console.error('Failed to load Mpsd.glb! Please make sure the file is in the same directory.');
                 animStatusEl.textContent = '⚠️ GUN MISSING';
+            });
+            
+            gunModel.addEventListener('loaded', () => {
+                console.log('Gun model loaded successfully');
             });
         }
         
