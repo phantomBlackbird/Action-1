@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini Player World - Full Animation System</title>
+    <title>Mini Player World - Tiny Player</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -94,67 +94,6 @@
             background: rgba(150, 50, 150, 0.7);
         }
         
-        /* Animation Controls Panel */
-        #animation-panel {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            color: white;
-            padding: 15px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            z-index: 1000;
-            max-width: 250px;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        
-        #animation-panel h3 {
-            margin: 0 0 10px 0;
-            text-align: center;
-            color: #ffaa00;
-        }
-        
-        .animation-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .anim-btn {
-            background: rgba(50, 50, 50, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 8px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: left;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-        
-        .anim-btn:hover {
-            background: rgba(100, 100, 100, 0.8);
-        }
-        
-        .anim-btn.active {
-            background: #ffaa00;
-            color: black;
-            font-weight: bold;
-        }
-        
-        .playback-control {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .playback-control input {
-            width: 100%;
-        }
-        
         /* UI Elements */
         #hud {
             position: fixed;
@@ -173,7 +112,7 @@
         #debug-info {
             position: fixed;
             top: 20px;
-            right: 290px;
+            right: 20px;
             color: white;
             font-size: 14px;
             background: rgba(0,0,0,0.5);
@@ -200,15 +139,16 @@
             white-space: nowrap;
         }
         
-        /* Current animation display */
-        #current-animation {
+        /* Animation status - minimal */
+        #anim-status {
             position: fixed;
-            top: 100px;
-            left: 20px;
+            bottom: 240px;
+            left: 50%;
+            transform: translateX(-50%);
             color: #ffaa00;
-            font-size: 16px;
+            font-size: 12px;
             background: rgba(0,0,0,0.5);
-            padding: 5px 15px;
+            padding: 4px 12px;
             border-radius: 20px;
             z-index: 1000;
             backdrop-filter: blur(5px);
@@ -222,42 +162,14 @@
         <div>Position: <span id="pos-x">0</span>, <span id="pos-z">0</span></div>
     </div>
     
-    <!-- Current Animation Display -->
-    <div id="current-animation">Animation: idle</div>
+    <!-- Animation Status (small, minimal) -->
+    <div id="anim-status">🧍 Idle</div>
     
     <!-- Debug Info -->
-    <div id="debug-info">Player Size: 10x smaller than original</div>
-    
-    <!-- Animation Panel -->
-    <div id="animation-panel">
-        <h3>🎮 Animation Controls</h3>
-        <div class="playback-control">
-            <label>Playback Speed: <span id="speed-value">1.0</span></label>
-            <input type="range" id="playback-speed" min="0" max="2" step="0.1" value="1">
-        </div>
-        <div class="animation-list" id="animation-list">
-            <button class="anim-btn active" data-anim="idle">1. 🧍 Idle</button>
-            <button class="anim-btn" data-anim="t-pose">2. ⭐ T-Pose</button>
-            <button class="anim-btn" data-anim="walk-forward">3. 🚶 Walk Forward</button>
-            <button class="anim-btn" data-anim="walk-backwards">4. 🚶 Walk Backwards</button>
-            <button class="anim-btn" data-anim="walk-left">5. 🚶 Walk Left</button>
-            <button class="anim-btn" data-anim="walk-right">6. 🚶 Walk Right</button>
-            <button class="anim-btn" data-anim="run-forward">7. 🏃 Run Forward</button>
-            <button class="anim-btn" data-anim="run-backwards">8. 🏃 Run Backwards</button>
-            <button class="anim-btn" data-anim="run-left">9. 🏃 Run Left</button>
-            <button class="anim-btn" data-anim="run-right">10. 🏃 Run Right</button>
-            <button class="anim-btn" data-anim="jump">11. 🦘 Jump</button>
-            <button class="anim-btn" data-anim="shoot-pistol">12. 🔫 Shoot Pistol</button>
-            <button class="anim-btn" data-anim="shoot-rifle">13. 🔫 Shoot Rifle</button>
-            <button class="anim-btn" data-anim="throw-grenade">14. 💣 Throw Grenade</button>
-            <button class="anim-btn" data-anim="reloading">15. 🔄 Reloading</button>
-            <button class="anim-btn" data-anim="hit-reaction-1">16. 💥 Hit Reaction 1</button>
-            <button class="anim-btn" data-anim="hit-reaction-2">17. 💥 Hit Reaction 2</button>
-        </div>
-    </div>
+    <div id="debug-info">Player Size: 0.0072 scale</div>
     
     <!-- Controls Hint -->
-    <div id="controls-hint">⬆️⬇️⬅️➡️ Joystick | JUMP | SHOOT | GRENADE</div>
+    <div id="controls-hint">⬆️⬇️⬅️➡️ Move | JUMP | SHOOT | GRENADE</div>
     
     <!-- Mobile Touch Controls -->
     <div id="touch-controls">
@@ -273,10 +185,10 @@
     </div>
     
     <!-- A-Frame Scene -->
-    <a-scene background="color: #87CEEB" shadow="type: pcfsoft" physics="gravity: -9.8;">
+    <a-scene background="color: #87CEEB" shadow="type: pcfsoft">
         <!-- Assets -->
         <a-assets>
-            <!-- Tiny Player Model - Replace with your actual model URL or use a fallback -->
+            <!-- Tiny Player Model - Using Player.glb with 0.0072 scale -->
             <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
             
             <!-- Environment Textures -->
@@ -285,16 +197,16 @@
         
         <!-- Third Person Camera Rig -->
         <a-entity id="camera-rig" position="0 1 0">
-            <!-- Tiny Player with Animation Mixer -->
+            <!-- Tiny Player with Animation Mixer - Scale 0.0072 as requested -->
             <a-entity id="player" position="0 0 0">
-                <a-gltf-model id="player-model-instance" src="#player-model" scale="0.05 0.05 0.05" position="0 0 0" animation-mixer="clip: idle; loop: repeat; timeScale: 1;"></a-gltf-model>
+                <a-gltf-model id="player-model-instance" src="#player-model" scale="0.0072 0.0072 0.0072" position="0 0 0" animation-mixer="clip: idle; loop: repeat; timeScale: 1;"></a-gltf-model>
                 
-                <!-- Simple player shadow -->
-                <a-circle position="0 -0.1 0" rotation="-90 0 0" radius="0.15" color="#333" material="opacity: 0.3; transparent: true"></a-circle>
+                <!-- Simple player shadow (scaled proportionally) -->
+                <a-circle position="0 -0.02 0" rotation="-90 0 0" radius="0.02" color="#333" material="opacity: 0.3; transparent: true"></a-circle>
             </a-entity>
             
-            <!-- Camera positioned behind the tiny player -->
-            <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.8 2.0" rotation="0 0 0"></a-camera>
+            <!-- Camera positioned behind the tiny player (adjusted for smaller scale) -->
+            <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.15 0.3" rotation="0 0 0"></a-camera>
         </a-entity>
         
         <!-- Enhanced Lighting -->
@@ -345,15 +257,15 @@
         let lastMovementTime = Date.now();
         let movementThreshold = 100; // ms before considering idle
         
-        // Movement speed adjusted for tiny player
-        let moveSpeed = 0.06;
-        const walkSpeed = 0.04;
-        const runSpeed = 0.08;
+        // Movement speed adjusted for tiny player (0.0072 scale)
+        let moveSpeed = 0.02; // Reduced for smaller scale
+        const walkSpeed = 0.015;
+        const runSpeed = 0.025;
         
         // DOM Elements
         const posXEl = document.getElementById('pos-x');
         const posZEl = document.getElementById('pos-z');
-        const currentAnimEl = document.getElementById('current-animation');
+        const animStatusEl = document.getElementById('anim-status');
         
         // Touch Controls
         const moveJoystick = document.getElementById('move-joystick');
@@ -361,11 +273,6 @@
         const jumpBtn = document.getElementById('jump-btn');
         const shootBtn = document.getElementById('shoot-btn');
         const grenadeBtn = document.getElementById('grenade-btn');
-        
-        // Animation Controls
-        const animBtns = document.querySelectorAll('.anim-btn');
-        const playbackSpeed = document.getElementById('playback-speed');
-        const speedValue = document.getElementById('speed-value');
         
         // A-Frame Elements
         const scene = document.querySelector('a-scene');
@@ -447,22 +354,39 @@
             if (!playerModel) return;
             
             // Update UI
-            animBtns.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.anim === animName) {
-                    btn.classList.add('active');
-                }
-            });
+            let displayName = animName;
+            if (animName === 'idle') displayName = '🧍 Idle';
+            else if (animName.includes('run')) displayName = '🏃 ' + animName;
+            else if (animName.includes('walk')) displayName = '🚶 ' + animName;
+            else if (animName.includes('shoot')) displayName = '🔫 ' + animName;
+            else if (animName === 'jump') displayName = '🦘 Jump';
+            else if (animName === 'throw-grenade') displayName = '💣 Grenade';
+            else if (animName.includes('hit')) displayName = '💥 ' + animName;
             
-            currentAnimEl.textContent = `Animation: ${animName}`;
+            animStatusEl.textContent = displayName;
             currentAnimation = animName;
             
             // Set animation on model
             playerModel.setAttribute('animation-mixer', {
                 clip: animName,
-                loop: animName.includes('hit') || animName.includes('jump') ? 'once' : 'repeat',
-                timeScale: parseFloat(playbackSpeed.value)
+                loop: (animName.includes('hit') || animName === 'jump' || animName.includes('shoot') || animName === 'throw-grenade' || animName === 'reloading') ? 'once' : 'repeat',
+                timeScale: 1.0
             });
+            
+            // If it's a one-shot animation, return to idle after completion
+            if (animName.includes('hit') || animName === 'jump' || animName.includes('shoot') || animName === 'throw-grenade' || animName === 'reloading') {
+                const duration = animName === 'jump' ? 400 : 
+                                animName === 'throw-grenade' ? 800 :
+                                animName.includes('shoot') ? 500 : 600;
+                
+                setTimeout(() => {
+                    if (!joystickActive && !isJumping) {
+                        setAnimation('idle');
+                    } else if (joystickActive && !isJumping) {
+                        updateMovementAnimation();
+                    }
+                }, duration);
+            }
         }
         
         // Handle movement-based animations
@@ -501,18 +425,18 @@
             }
         }
         
-        // Jump Function with proper physics
+        // Jump Function with proper physics (adjusted for 0.0072 scale)
         function jump() {
             if (isJumping) return;
             
             let pos = cameraRig.getAttribute('position');
-            if (pos.y <= 0.35) {
+            if (pos.y <= 0.08) { // Ground level check adjusted for smaller scale
                 isJumping = true;
                 setAnimation('jump');
                 
                 let jumpStartTime = Date.now();
                 let startY = pos.y;
-                const jumpHeight = 0.3;
+                const jumpHeight = 0.06; // Reduced for smaller scale
                 const jumpDuration = 400; // ms
                 
                 function jumpAnimation() {
@@ -544,21 +468,15 @@
         function shoot() {
             if (isJumping) return;
             setAnimation('shoot-rifle');
-            setTimeout(() => {
-                updateMovementAnimation();
-            }, 500);
         }
         
         // Throw grenade function
         function throwGrenade() {
             if (isJumping) return;
             setAnimation('throw-grenade');
-            setTimeout(() => {
-                updateMovementAnimation();
-            }, 800);
         }
         
-        // Move player based on joystick
+        // Move player based on joystick (adjusted for 0.0072 scale)
         function movePlayer() {
             if (!gameRunning || !joystickActive || isJumping) return;
             
@@ -620,23 +538,6 @@
             throwGrenade();
         });
         
-        // Animation button listeners
-        animBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const animName = btn.dataset.anim;
-                setAnimation(animName);
-            });
-        });
-        
-        // Playback speed control
-        playbackSpeed.addEventListener('input', (e) => {
-            const speed = e.target.value;
-            speedValue.textContent = speed;
-            if (playerModel) {
-                playerModel.setAttribute('animation-mixer', 'timeScale', parseFloat(speed));
-            }
-        });
-        
         // Keyboard controls for debugging
         window.addEventListener('keydown', (e) => {
             if (!gameRunning) return;
@@ -646,17 +547,13 @@
                     e.preventDefault();
                     jump();
                     break;
-                case '1':
-                    setAnimation('idle');
+                case 'f':
+                case 'F':
+                    shoot();
                     break;
-                case '2':
-                    setAnimation('walk-forward');
-                    break;
-                case '3':
-                    setAnimation('run-forward');
-                    break;
-                case '4':
-                    setAnimation('shoot-pistol');
+                case 'g':
+                case 'G':
+                    throwGrenade();
                     break;
             }
         });
@@ -670,10 +567,10 @@
         
         // Initialize when scene loads
         scene.addEventListener('loaded', () => {
-            console.log('Scene loaded - Tiny player world with animations!');
+            console.log('Scene loaded - Tiny player with 0.0072 scale!');
             
-            // Set initial position
-            cameraRig.setAttribute('position', { x: 0, y: 0.3, z: 0 });
+            // Set initial position (adjusted for smaller scale)
+            cameraRig.setAttribute('position', { x: 0, y: 0.06, z: 0 });
             
             // Set initial animation
             setTimeout(() => {
@@ -687,22 +584,17 @@
         // Add error handling for model loading
         if (playerModel) {
             playerModel.addEventListener('error', (e) => {
-                console.error('Failed to load player model! Using fallback...');
-                // Create a simple animated cube as fallback
-                const fallback = document.createElement('a-box');
-                fallback.setAttribute('color', 'red');
-                fallback.setAttribute('scale', '0.5 0.8 0.3');
-                fallback.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 2000; easing: linear; loop: true');
-                document.querySelector('#player').appendChild(fallback);
+                console.error('Failed to load Player.glb! Please make sure the file is in the same directory.');
+                animStatusEl.textContent = '⚠️ Model not found';
             });
         }
         
-        // Add floating particles
+        // Add floating particles for magic effect
         function createFloatingParticles() {
             for (let i = 0; i < 20; i++) {
                 setTimeout(() => {
                     const particle = document.createElement('a-sphere');
-                    particle.setAttribute('radius', '0.05');
+                    particle.setAttribute('radius', '0.01');
                     particle.setAttribute('color', `hsl(${Math.random() * 360}, 80%, 70%)`);
                     particle.setAttribute('position', {
                         x: (Math.random() - 0.5) * 80,
@@ -720,4 +612,4 @@
         scene.addEventListener('loaded', createFloatingParticles);
     </script>
 </body>
-    </html>
+</html>
