@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire Style Action Game - A-Frame (Mini Characters)</title>
+    <title>Free Fire Style Action Game - A-Frame (3x Smaller)</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <script src="https://unpkg.com/aframe-physics-system@4.0.2/dist/aframe-physics-system.min.js"></script>
@@ -149,6 +149,19 @@
             z-index: 500;
             pointer-events: none;
         }
+        
+        /* Mini-map style indicator */
+        #debug-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -161,6 +174,9 @@
         <div>Score: <span id="score">0</span></div>
         <div id="enemies-left">Enemies: 5</div>
     </div>
+    
+    <!-- Debug Info -->
+    <div id="debug-info">Camera Height: 0.8</div>
     
     <!-- Game Over Screen -->
     <div id="game-over">
@@ -185,16 +201,15 @@
     <a-scene physics="gravity: -9.8;" background="color: #87CEEB">
         <!-- Assets -->
         <a-assets>
-            <!-- Player Character (you can replace with your Player.glb) - Now 5x smaller -->
-            <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
-            <a-asset-item id="enemy-model" src="Player.glb"></a-asset-item>
+            <!-- Player Character (you can replace with your Player.glb) - Now 3x smaller -->
+            <a-asset-item id="player-model" src="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/RobotExpressive/RobotExpressive.glb"></a-asset-item>
             
-            <!-- Bullet Model (smaller) -->
-            <a-asset-item id="bullet-model" src="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/RobotExpressive/RobotExpressive.glb"></a-asset-item>
+            <!-- Enemy Character - Now 3x smaller -->
+            <a-asset-item id="enemy-model" src="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/RobotExpressive/RobotExpressive.glb"></a-asset-item>
         </a-assets>
         
-        <!-- Camera (First Person View) - Adjusted height for smaller characters -->
-        <a-entity id="camera-rig" position="0 0.3 0">
+        <!-- Camera (First Person View) - Higher position for better view -->
+        <a-entity id="camera-rig" position="0 0.8 0">
             <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true">
                 <a-cursor></a-cursor>
             </a-camera>
@@ -205,45 +220,63 @@
         <a-light type="directional" position="1 2 1" intensity="1.5" castshadow="true"></a-light>
         <a-light type="point" position="0 5 0" intensity="1"></a-light>
         
-        <!-- Ground - Now with scaled-down texture to match smaller world -->
-        <a-plane id="ground" rotation="-90 0 0" width="50" height="50" color="#4CAF50" material="side: double; roughness: 0.8; metalness: 0.2; repeat: 10 10" static-body></a-plane>
+        <!-- Ground with texture pattern -->
+        <a-plane id="ground" rotation="-90 0 0" width="50" height="50" color="#4CAF50" material="side: double; roughness: 0.8; metalness: 0.2; repeat: 8 8" static-body></a-plane>
         
-        <!-- Grid - Smaller scale to match mini world -->
-        <a-grid position="0 0.01 0" width="50" height="50" cell-size="1" material="color: #333; opacity: 0.3" ></a-grid>
+        <!-- Grid for scale reference -->
+        <a-grid position="0 0.02 0" width="50" height="50" cell-size="1.5" material="color: #333; opacity: 0.3" ></a-grid>
         
-        <!-- Obstacles / Cover - Scaled down to match smaller characters -->
-        <a-box position="-5 0.1 -5" width="2" height="0.2" depth="2" color="#8B4513" static-body></a-box>
-        <a-box position="5 0.1 -8" width="2" height="0.2" depth="2" color="#8B4513" static-body></a-box>
-        <a-box position="-2 0.1 -12" width="3" height="0.2" depth="3" color="#8B4513" static-body></a-box>
-        <a-box position="3 0.1 -15" width="2" height="0.2" depth="2" color="#8B4513" static-body></a-box>
+        <!-- Obstacles / Cover - Proportional to 3x smaller characters -->
+        <!-- Low walls -->
+        <a-box position="-5 0.15 -5" width="2" height="0.3" depth="2" color="#8B4513" static-body></a-box>
+        <a-box position="5 0.15 -8" width="2" height="0.3" depth="2" color="#8B4513" static-body></a-box>
+        <a-box position="-2 0.15 -12" width="3" height="0.3" depth="3" color="#8B4513" static-body></a-box>
+        <a-box position="3 0.15 -15" width="2" height="0.3" depth="2" color="#8B4513" static-body></a-box>
         
-        <!-- Tall obstacles for cover - Scaled down -->
-        <a-box position="-8 0.5 -8" width="1.5" height="1" depth="1.5" color="#A0522D" static-body></a-box>
-        <a-box position="7 0.5 -10" width="1.5" height="1" depth="1.5" color="#A0522D" static-body></a-box>
-        <a-box position="0 0.5 -20" width="2" height="1" depth="2" color="#A0522D" static-body></a-box>
+        <!-- Tall obstacles for cover -->
+        <a-box position="-8 0.7 -8" width="1.8" height="1.4" depth="1.8" color="#A0522D" static-body></a-box>
+        <a-box position="7 0.7 -10" width="1.8" height="1.4" depth="1.8" color="#A0522D" static-body></a-box>
+        <a-box position="0 0.7 -20" width="2.2" height="1.4" depth="2.2" color="#A0522D" static-body></a-box>
+        <a-box position="-12 0.7 -12" width="1.8" height="1.4" depth="1.8" color="#A0522D" static-body></a-box>
+        <a-box position="12 0.7 -15" width="1.8" height="1.4" depth="1.8" color="#A0522D" static-body></a-box>
         
-        <!-- Trees / Decoration - Scaled down -->
-        <a-cylinder position="-7 0 -10" radius="0.2" height="1" color="#8B4513" static-body></a-cylinder>
-        <a-sphere position="-7 0.6 -10" radius="0.4" color="green"></a-sphere>
+        <!-- Trees / Decoration - Scaled for 3x smaller world -->
+        <a-cylinder position="-7 0 -10" radius="0.3" height="1.5" color="#8B4513" static-body></a-cylinder>
+        <a-sphere position="-7 0.9 -10" radius="0.6" color="green"></a-sphere>
         
-        <a-cylinder position="8 0 -12" radius="0.2" height="1" color="#8B4513" static-body></a-cylinder>
-        <a-sphere position="8 0.6 -12" radius="0.4" color="green"></a-sphere>
+        <a-cylinder position="8 0 -12" radius="0.3" height="1.5" color="#8B4513" static-body></a-cylinder>
+        <a-sphere position="8 0.9 -12" radius="0.6" color="green"></a-sphere>
         
-        <a-cylinder position="-10 0 -5" radius="0.2" height="1" color="#8B4513" static-body></a-cylinder>
-        <a-sphere position="-10 0.6 -5" radius="0.4" color="green"></a-sphere>
+        <a-cylinder position="-10 0 -5" radius="0.3" height="1.5" color="#8B4513" static-body></a-cylinder>
+        <a-sphere position="-10 0.9 -5" radius="0.6" color="green"></a-sphere>
         
-        <!-- Bushes - New small cover -->
-        <a-sphere position="-4 0.2 -7" radius="0.3" color="darkgreen"></a-sphere>
-        <a-sphere position="6 0.2 -15" radius="0.3" color="darkgreen"></a-sphere>
-        <a-sphere position="-9 0.2 -18" radius="0.3" color="darkgreen"></a-sphere>
+        <a-cylinder position="12 0 -8" radius="0.3" height="1.5" color="#8B4513" static-body></a-cylinder>
+        <a-sphere position="12 0.9 -8" radius="0.6" color="green"></a-sphere>
+        
+        <!-- Bushes -->
+        <a-sphere position="-4 0.25 -7" radius="0.4" color="darkgreen"></a-sphere>
+        <a-sphere position="6 0.25 -15" radius="0.4" color="darkgreen"></a-sphere>
+        <a-sphere position="-9 0.25 -18" radius="0.4" color="darkgreen"></a-sphere>
+        <a-sphere position="10 0.25 -20" radius="0.4" color="darkgreen"></a-sphere>
+        <a-sphere position="-13 0.25 -8" radius="0.4" color="darkgreen"></a-sphere>
         
         <!-- Rocks -->
-        <a-sphere position="-3 0.1 -20" radius="0.25" color="gray" roughness="0.8"></a-sphere>
-        <a-sphere position="4 0.1 -22" radius="0.3" color="gray" roughness="0.8"></a-sphere>
+        <a-sphere position="-3 0.15 -20" radius="0.35" color="gray" roughness="0.8"></a-sphere>
+        <a-sphere position="4 0.15 -22" radius="0.4" color="gray" roughness="0.8"></a-sphere>
+        <a-sphere position="-11 0.15 -15" radius="0.3" color="gray" roughness="0.8"></a-sphere>
         
-        <!-- Player Character (visible in 3rd person for testing, but we'll use first person view) - Now 5x smaller -->
+        <!-- Barrels for cover -->
+        <a-cylinder position="-6 0.2 -14" radius="0.25" height="0.5" color="#CD853F" static-body></a-cylinder>
+        <a-cylinder position="9 0.2 -17" radius="0.25" height="0.5" color="#CD853F" static-body></a-cylinder>
+        <a-cylinder position="-14 0.2 -10" radius="0.25" height="0.5" color="#CD853F" static-body></a-cylinder>
+        
+        <!-- Crates -->
+        <a-box position="-1 0.25 -18" width="0.6" height="0.5" depth="0.6" color="#D2691E" static-body></a-box>
+        <a-box position="2 0.25 -19" width="0.6" height="0.5" depth="0.6" color="#D2691E" static-body></a-box>
+        
+        <!-- Player Character (visible in 3rd person for testing, but we'll use first person view) - Now 3x smaller -->
         <a-entity id="player" position="0 0 0" visible="false">
-            <a-gltf-model src="#player-model" scale="0.1 0.1 0.1" position="0 0 0" animation-mixer></a-gltf-model>
+            <a-gltf-model src="#player-model" scale="0.17 0.17 0.17" position="0 0 0" animation-mixer></a-gltf-model>
         </a-entity>
     </a-scene>
     
@@ -254,8 +287,8 @@
         let playerScore = 0;
         let enemies = [];
         let bullets = [];
-        // Adjusted move speed for smaller world
-        let moveSpeed = 0.08;
+        // Adjusted move speed for 3x smaller world
+        let moveSpeed = 0.12;
         let joystickActive = false;
         let joystickVector = { x: 0, y: 0 };
         
@@ -338,29 +371,29 @@
             }
         });
         
-        // Jump Function - Adjusted for smaller scale
+        // Jump Function - Adjusted for 3x smaller scale with higher camera
         function jump() {
             let pos = cameraRig.getAttribute('position');
-            if (pos.y <= 0.35) { // Ground level check (adjusted for smaller characters)
-                pos.y += 0.5; // Lower jump height for smaller scale
+            if (pos.y <= 0.85) { // Ground level check (slightly above 0.8 base)
+                pos.y += 0.8; // Jump height
                 cameraRig.setAttribute('position', pos);
                 
                 // Gravity pull down
                 setTimeout(() => {
                     let newPos = cameraRig.getAttribute('position');
-                    newPos.y -= 0.5;
+                    newPos.y -= 0.8;
                     cameraRig.setAttribute('position', newPos);
-                }, 200);
+                }, 250);
             }
         }
         
-        // Shoot Function - Smaller bullets
+        // Shoot Function
         function shoot() {
             if (!gameRunning) return;
             
-            // Create bullet - smaller size
+            // Create bullet
             const bullet = document.createElement('a-sphere');
-            bullet.setAttribute('radius', '0.08');
+            bullet.setAttribute('radius', '0.12');
             bullet.setAttribute('color', 'red');
             bullet.setAttribute('dynamic-body', '');
             
@@ -377,7 +410,7 @@
             
             bullet.setAttribute('position', {
                 x: cameraPos.x + direction.x,
-                y: cameraPos.y,
+                y: cameraPos.y - 0.1, // Slightly lower to appear from gun
                 z: cameraPos.z + direction.z
             });
             
@@ -387,12 +420,12 @@
             bullets.push({
                 element: bullet,
                 direction: direction,
-                speed: 0.3 // Slightly slower for smaller world
+                speed: 0.4
             });
             
-            // Visual feedback - smaller muzzle flash
+            // Visual feedback - muzzle flash
             const flash = document.createElement('a-sphere');
-            flash.setAttribute('radius', '0.05');
+            flash.setAttribute('radius', '0.08');
             flash.setAttribute('color', 'yellow');
             flash.setAttribute('position', cameraPos);
             scene.appendChild(flash);
@@ -421,50 +454,50 @@
                 pos.z += Math.cos(radY + Math.PI/2) * joystickVector.x * moveSpeed;
             }
             
-            // Keep player within bounds (slightly smaller bounds for mini world)
-            pos.x = Math.max(-20, Math.min(20, pos.x));
-            pos.z = Math.max(-20, Math.min(20, pos.z));
+            // Keep player within bounds
+            pos.x = Math.max(-22, Math.min(22, pos.x));
+            pos.z = Math.max(-22, Math.min(22, pos.z));
             
             cameraRig.setAttribute('position', pos);
         }
         
-        // Create enemies - Now 5x smaller
+        // Create enemies - Now 3x smaller
         function createEnemies(count) {
             for (let i = 0; i < count; i++) {
                 const enemy = document.createElement('a-entity');
                 enemy.setAttribute('class', 'enemy');
                 
-                // Random position away from player (closer due to smaller scale)
+                // Random position
                 const angle = (i / count) * Math.PI * 2;
-                const distance = 4 + Math.random() * 3; // Closer spawns for smaller world
+                const distance = 5 + Math.random() * 4;
                 const x = Math.cos(angle) * distance;
-                const z = Math.sin(angle) * distance - 5; // Closer to player
+                const z = Math.sin(angle) * distance - 7;
                 
                 enemy.setAttribute('position', { x, y: 0, z });
                 
-                // Enemy model - 5x smaller (original scale was 0.5, now 0.1 = 5x smaller)
+                // Enemy model - 3x smaller (original 0.5 / 3 ≈ 0.17)
                 const model = document.createElement('a-gltf-model');
                 model.setAttribute('src', '#enemy-model');
-                model.setAttribute('scale', '0.1 0.1 0.1');
+                model.setAttribute('scale', '0.17 0.17 0.17');
                 model.setAttribute('animation-mixer', '');
                 enemy.appendChild(model);
                 
-                // Health bar - smaller to match enemy size
+                // Health bar - proportional
                 const healthBar = document.createElement('a-plane');
                 healthBar.setAttribute('class', 'enemy-health');
-                healthBar.setAttribute('width', '0.8');
-                healthBar.setAttribute('height', '0.08');
+                healthBar.setAttribute('width', '1.0');
+                healthBar.setAttribute('height', '0.12');
                 healthBar.setAttribute('color', 'red');
-                healthBar.setAttribute('position', '0 0.6 0'); // Lower position for smaller enemy
+                healthBar.setAttribute('position', '0 0.9 0');
                 enemy.appendChild(healthBar);
                 
                 scene.appendChild(enemy);
                 
                 enemies.push({
                     element: enemy,
-                    health: 30, // Lower health for faster gameplay
-                    maxHealth: 30,
-                    speed: 0.015, // Slower movement speed
+                    health: 40,
+                    maxHealth: 40,
+                    speed: 0.02,
                     lastShot: 0
                 });
             }
@@ -472,7 +505,7 @@
             enemiesLeftEl.textContent = `Enemies: ${enemies.length}`;
         }
         
-        // Enemy AI - Adjusted for smaller scale
+        // Enemy AI
         function updateEnemies() {
             if (!gameRunning) return;
             
@@ -486,25 +519,25 @@
                 const dz = playerPos.z - enemyPos.z;
                 const dist = Math.sqrt(dx*dx + dz*dz);
                 
-                if (dist > 1) { // Closer attack range for smaller scale
+                if (dist > 1.2) {
                     enemyPos.x += (dx / dist) * enemy.speed;
                     enemyPos.z += (dz / dist) * enemy.speed;
                     enemy.element.setAttribute('position', enemyPos);
                 }
                 
-                // Simple attack - faster rate for smaller scale
-                if (dist < 1.2 && Date.now() - enemy.lastShot > 1500) {
+                // Attack
+                if (dist < 1.5 && Date.now() - enemy.lastShot > 1800) {
                     enemy.lastShot = Date.now();
-                    playerHealth -= 10;
+                    playerHealth -= 8;
                     healthEl.textContent = playerHealth;
                     
                     if (playerHealth <= 0) {
                         gameOver('You Died!');
                     }
                     
-                    // Attack visual - smaller
+                    // Attack visual
                     const attack = document.createElement('a-sphere');
-                    attack.setAttribute('radius', '0.1');
+                    attack.setAttribute('radius', '0.15');
                     attack.setAttribute('color', 'orange');
                     attack.setAttribute('position', enemyPos);
                     scene.appendChild(attack);
@@ -515,13 +548,13 @@
                 const healthBar = enemy.element.querySelector('.enemy-health');
                 if (healthBar) {
                     const healthPercent = enemy.health / enemy.maxHealth;
-                    healthBar.setAttribute('width', 0.8 * healthPercent);
-                    healthBar.setAttribute('position', `${-(0.4 - (0.4 * healthPercent))} 0.6 0`);
+                    healthBar.setAttribute('width', 1.0 * healthPercent);
+                    healthBar.setAttribute('position', `${-(0.5 - (0.5 * healthPercent))} 0.9 0`);
                 }
             });
         }
         
-        // Update bullets - Adjusted for smaller scale
+        // Update bullets
         function updateBullets() {
             bullets = bullets.filter(bullet => {
                 const pos = bullet.element.getAttribute('position');
@@ -531,7 +564,7 @@
                 pos.z += bullet.direction.z * bullet.speed;
                 bullet.element.setAttribute('position', pos);
                 
-                // Check collision with enemies (smaller hitbox)
+                // Check collision with enemies
                 let hit = false;
                 enemies.forEach((enemy, enemyIndex) => {
                     const enemyPos = enemy.element.getAttribute('position');
@@ -540,13 +573,13 @@
                         Math.pow(pos.z - enemyPos.z, 2)
                     );
                     
-                    if (dist < 0.6) { // Smaller collision radius
+                    if (dist < 0.8) {
                         hit = true;
-                        enemy.health -= 15; // More damage per hit
+                        enemy.health -= 20;
                         
                         // Hit effect
                         const hitEffect = document.createElement('a-sphere');
-                        hitEffect.setAttribute('radius', '0.15');
+                        hitEffect.setAttribute('radius', '0.2');
                         hitEffect.setAttribute('color', 'yellow');
                         hitEffect.setAttribute('position', enemyPos);
                         scene.appendChild(hitEffect);
@@ -608,8 +641,8 @@
             bullets.forEach(bullet => bullet.element.remove());
             bullets = [];
             
-            // Reset player position (adjusted height for smaller scale)
-            cameraRig.setAttribute('position', { x: 0, y: 0.3, z: 0 });
+            // Reset player position (higher camera)
+            cameraRig.setAttribute('position', { x: 0, y: 0.8, z: 0 });
             
             // Hide game over screen
             gameOverDiv.style.display = 'none';
@@ -632,12 +665,12 @@
         
         // Initialize game when scene loads
         scene.addEventListener('loaded', () => {
-            console.log('Scene loaded - Mini characters mode');
+            console.log('Scene loaded - 3x smaller characters, higher camera');
             createEnemies(5);
             gameLoop();
         });
         
-        // Keyboard controls for debugging on desktop
+        // Keyboard controls for debugging
         window.addEventListener('keydown', (e) => {
             if (!gameRunning) return;
             
@@ -661,4 +694,4 @@
         }, { passive: false });
     </script>
 </body>
-                                                                                                    </html>
+    </html>
