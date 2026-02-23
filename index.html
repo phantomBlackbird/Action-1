@@ -3,10 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Fire Style Action Game - A-Frame (5x Smaller, 3rd Person Camera)</title>
+    <title>Mini Player World - A-Frame (10x Smaller)</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://unpkg.com/aframe-physics-system@4.0.2/dist/aframe-physics-system.min.js"></script>
     
     <style>
         body {
@@ -60,7 +59,7 @@
             width: 70px;
             height: 70px;
             border-radius: 35px;
-            background: rgba(255, 0, 0, 0.7);
+            background: rgba(0, 150, 255, 0.7);
             border: 3px solid rgba(255, 255, 255, 0.8);
             color: white;
             font-size: 16px;
@@ -73,26 +72,15 @@
         
         .action-btn:active {
             transform: scale(0.95);
-            background: rgba(200, 0, 0, 0.9);
-        }
-        
-        #jump-btn {
-            background: rgba(0, 150, 255, 0.7);
-        }
-        
-        #jump-btn:active {
             background: rgba(0, 100, 200, 0.9);
         }
         
-        #shoot-btn {
-            background: rgba(255, 50, 50, 0.9);
-            animation: pulse 1.5s infinite;
+        #jump-btn {
+            background: rgba(255, 100, 0, 0.7);
         }
         
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        #jump-btn:active {
+            background: rgba(200, 80, 0, 0.9);
         }
         
         /* UI Elements */
@@ -110,63 +98,49 @@
             backdrop-filter: blur(5px);
         }
         
-        #game-over {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            z-index: 2000;
-            display: none;
-            backdrop-filter: blur(10px);
-        }
-        
-        #restart-btn {
-            padding: 10px 30px;
-            font-size: 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-top: 20px;
-            cursor: pointer;
-        }
-        
-        /* Mini-map style indicator */
         #debug-info {
             position: fixed;
             top: 20px;
             right: 20px;
             color: white;
-            font-size: 12px;
+            font-size: 14px;
             background: rgba(0,0,0,0.5);
-            padding: 5px;
-            border-radius: 5px;
+            padding: 8px 15px;
+            border-radius: 20px;
             z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Controls hint */
+        #controls-hint {
+            position: fixed;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            text-align: center;
+            white-space: nowrap;
         }
     </style>
 </head>
 <body>
     <!-- HUD Display -->
     <div id="hud">
-        <div>Health: <span id="health">100</span></div>
-        <div>Score: <span id="score">0</span></div>
-        <div id="enemies-left">Enemies: 5</div>
+        <div>🌈 Mini World Explorer</div>
+        <div>Position: <span id="pos-x">0</span>, <span id="pos-z">0</span></div>
     </div>
     
     <!-- Debug Info -->
-    <div id="debug-info">3rd Person Camera - 5x Smaller Characters</div>
+    <div id="debug-info">Player Size: 10x smaller than original</div>
     
-    <!-- Game Over Screen -->
-    <div id="game-over">
-        <h1 id="game-over-text">GAME OVER</h1>
-        <p>Final Score: <span id="final-score">0</span></p>
-        <button id="restart-btn">Play Again</button>
-    </div>
+    <!-- Controls Hint -->
+    <div id="controls-hint">⬆️⬇️⬅️➡️ Move | ⬆️ Jump</div>
     
     <!-- Mobile Touch Controls -->
     <div id="touch-controls">
@@ -176,102 +150,119 @@
         
         <div class="action-buttons">
             <button class="action-btn" id="jump-btn">JUMP</button>
-            <button class="action-btn" id="shoot-btn">SHOOT</button>
         </div>
     </div>
     
     <!-- A-Frame Scene -->
-    <a-scene physics="gravity: -9.8;" background="color: #87CEEB">
+    <a-scene background="color: #87CEEB" shadow="type: pcfsoft">
         <!-- Assets -->
         <a-assets>
-            <!-- Player Character - Now 5x smaller (0.5/5 = 0.1) -->
-          <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
-            <a-asset-item id="enemy-model" src="Player.glb"></a-asset-item>
- </a-assets>
+            <!-- Tiny Player Model - Now 0.05 scale (half of previous 0.1) -->
+            <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
+            
+            <!-- Environment Textures -->
+            <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg" crossorigin="anonymous">
+        </a-assets>
         
-        <!-- Third Person Camera Rig - Positioned behind and above player -->
-        <a-entity id="camera-rig" position="0 0.5 0">
-            <!-- The player model (visible in 3rd person) -->
+        <!-- Third Person Camera Rig -->
+        <a-entity id="camera-rig" position="0 0.3 0">
+            <!-- Tiny Player Model - Now 0.05 scale (2x smaller than before) -->
             <a-entity id="player" position="0 0 0">
-                <a-gltf-model src="#player-model" scale="0.1 0.1 0.1" position="0 0 0" animation-mixer></a-gltf-model>
+                <a-gltf-model src="#player-model" scale="0.05 0.05 0.05" position="0 0 0" animation-mixer></a-gltf-model>
+                
+                <!-- Simple player shadow -->
+                <a-circle position="0 -0.1 0" rotation="-90 0 0" radius="0.15" color="#333" material="opacity: 0.3; transparent: true"></a-circle>
             </a-entity>
             
-            <!-- Camera positioned behind player (like in the image) -->
-            <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 1.2 2.5" rotation="0 0 0"></a-camera>
+            <!-- Camera positioned behind the tiny player -->
+            <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.8 2.0" rotation="0 0 0"></a-camera>
         </a-entity>
         
-        <!-- Lighting -->
-        <a-light type="ambient" color="#fff" intensity="0.5"></a-light>
-        <a-light type="directional" position="1 2 1" intensity="1.5" castshadow="true"></a-light>
-        <a-light type="point" position="0 5 0" intensity="1"></a-light>
+        <!-- Enhanced Lighting -->
+        <a-light type="ambient" color="#fff" intensity="0.6"></a-light>
+        <a-light type="directional" position="2 5 3" intensity="1.2" castshadow="true" shadow-mapSize-width="2048" shadow-mapSize-height="2048"></a-light>
+        <a-light type="point" position="0 3 0" intensity="0.5" color="#FFEECC"></a-light>
         
-        <!-- Ground with texture pattern - Adjusted size for smaller characters -->
-        <a-plane id="ground" rotation="-90 0 0" width="80" height="80" color="#4CAF50" material="side: double; roughness: 0.8; metalness: 0.2; repeat: 12 12" static-body></a-plane>
+        <!-- Massive Ground for tiny player to explore -->
+        <a-plane id="ground" rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40; roughness: 0.8; metalness: 0.1" receive-shadow></a-plane>
         
-        <!-- Grid for scale reference -->
-        <a-grid position="0 0.02 0" width="80" height="80" cell-size="1" material="color: #333; opacity: 0.3"></a-grid>
+        <!-- Decorative grid for scale reference -->
+        <a-grid position="0 0.01 0" width="200" height="200" cell-size="1" material="color: #888; opacity: 0.15"></a-grid>
         
-        <!-- Obstacles / Cover - Proportional to 5x smaller characters -->
-        <!-- Low walls -->
-        <a-box position="-5 0.1 -5" width="2" height="0.2" depth="2" color="#8B4513" static-body></a-box>
-        <a-box position="5 0.1 -8" width="2" height="0.2" depth="2" color="#8B4513" static-body></a-box>
-        <a-box position="-2 0.1 -12" width="3" height="0.2" depth="3" color="#8B4513" static-body></a-box>
-        <a-box position="3 0.1 -15" width="2" height="0.2" depth="2" color="#8B4513" static-body></a-box>
+        <!-- Fun environment - Everything scaled for tiny player -->
         
-        <!-- Tall obstacles for cover -->
-        <a-box position="-8 0.45 -8" width="1.8" height="0.9" depth="1.8" color="#A0522D" static-body></a-box>
-        <a-box position="7 0.45 -10" width="1.8" height="0.9" depth="1.8" color="#A0522D" static-body></a-box>
-        <a-box position="0 0.45 -20" width="2.2" height="0.9" depth="2.2" color="#A0522D" static-body></a-box>
+        <!-- Giant mushrooms (trees look too big, so using mushrooms for scale) -->
+        <a-cylinder position="-15 0.1 -20" radius="0.4" height="0.8" color="#8B4513" shadow></a-cylinder>
+        <a-sphere position="-15 0.6 -20" radius="0.6" color="#FF6B6B" shadow></a-sphere>
+        <a-sphere position="-14.5 1.0 -20.5" radius="0.3" color="#FF8E8E" shadow></a-sphere>
         
-        <!-- Trees / Decoration - Scaled for 5x smaller world -->
-        <a-cylinder position="-7 0 -10" radius="0.2" height="1.0" color="#8B4513" static-body></a-cylinder>
-        <a-sphere position="-7 0.6 -10" radius="0.4" color="green"></a-sphere>
+        <a-cylinder position="20 0.1 -15" radius="0.5" height="1.0" color="#8B4513" shadow></a-cylinder>
+        <a-sphere position="20 0.7 -15" radius="0.7" color="#4ECDC4" shadow></a-sphere>
+        <a-sphere position="19.5 1.2 -14.5" radius="0.4" color="#45B7AA" shadow></a-sphere>
         
-        <a-cylinder position="8 0 -12" radius="0.2" height="1.0" color="#8B4513" static-body></a-cylinder>
-        <a-sphere position="8 0.6 -12" radius="0.4" color="green"></a-sphere>
+        <a-cylinder position="-10 0.1 25" radius="0.3" height="0.6" color="#8B4513" shadow></a-cylinder>
+        <a-sphere position="-10 0.5 25" radius="0.5" color="#FFE66D" shadow></a-sphere>
         
-        <!-- Bushes -->
-        <a-sphere position="-4 0.15 -7" radius="0.25" color="darkgreen"></a-sphere>
-        <a-sphere position="6 0.15 -15" radius="0.25" color="darkgreen"></a-sphere>
+        <!-- Tiny houses for the tiny player -->
+        <a-box position="-25 0.2 -30" width="3" height="0.4" depth="3" color="#A0522D" shadow></a-box>
+        <a-box position="-25 0.8 -30" width="2.5" height="1.2" depth="2.5" color="#DEB887" shadow></a-box>
+        <a-cone position="-25 1.6 -30" radius-bottom="1.5" radius-top="0" height="1.2" color="#8B4513" shadow></a-cone>
+        <a-box position="-26.2 0.5 -29.2" width="0.4" height="0.6" depth="0.1" color="#654321"></a-box>
         
-        <!-- Rocks -->
-        <a-sphere position="-3 0.1 -20" radius="0.2" color="gray" roughness="0.8"></a-sphere>
-        <a-sphere position="4 0.1 -22" radius="0.25" color="gray" roughness="0.8"></a-sphere>
+        <!-- Colorful crystals -->
+        <a-cylinder position="30 0.1 20" radius="0.3" height="1.5" color="#FF69B4" shadow></a-cylinder>
+        <a-cone position="30 1.0 20" radius-bottom="0.4" radius-top="0" height="0.8" color="#FF1493" shadow></a-cone>
         
-        <!-- Barrels for cover -->
-        <a-cylinder position="-6 0.15 -14" radius="0.15" height="0.3" color="#CD853F" static-body></a-cylinder>
-        <a-cylinder position="9 0.15 -17" radius="0.15" height="0.3" color="#CD853F" static-body></a-cylinder>
+        <a-cylinder position="35 0.1 15" radius="0.3" height="1.8" color="#4169E1" shadow></a-cylinder>
+        <a-cone position="35 1.1 15" radius-bottom="0.4" radius-top="0" height="0.9" color="#1E90FF" shadow></a-cone>
         
-        <!-- Crates -->
-        <a-box position="-1 0.15 -18" width="0.4" height="0.3" depth="0.4" color="#D2691E" static-body></a-box>
-        <a-box position="2 0.15 -19" width="0.4" height="0.3" depth="0.4" color="#D2691E" static-body></a-box>
+        <!-- Stone circles (like miniature Stonehenge) -->
+        <a-cylinder position="-5 0.15 40" radius="0.2" height="1.0" color="#A9A9A9" shadow></a-cylinder>
+        <a-cylinder position="-3 0.15 42" radius="0.2" height="1.2" color="#A9A9A9" shadow></a-cylinder>
+        <a-cylinder position="-1 0.15 40" radius="0.2" height="0.9" color="#A9A9A9" shadow></a-cylinder>
+        <a-cylinder position="-3 0.15 38" radius="0.2" height="1.1" color="#A9A9A9" shadow></a-cylinder>
+        
+        <!-- Flower patches (colored spheres) -->
+        <a-sphere position="-40 0.1 -10" radius="0.15" color="#FFB6C1" shadow></a-sphere>
+        <a-sphere position="-39 0.1 -11" radius="0.15" color="#FFD700" shadow></a-sphere>
+        <a-sphere position="-41 0.1 -11" radius="0.15" color="#9370DB" shadow></a-sphere>
+        <a-sphere position="-40 0.1 -12" radius="0.15" color="#FFA07A" shadow></a-sphere>
+        
+        <a-sphere position="45 0.1 5" radius="0.2" color="#98FB98" shadow></a-sphere>
+        <a-sphere position="46 0.1 6" radius="0.18" color="#87CEEB" shadow></a-sphere>
+        <a-sphere position="44 0.1 6" radius="0.22" color="#DDA0DD" shadow></a-sphere>
+        
+        <!-- Tiny pond -->
+        <a-circle position="10 0.05 40" rotation="-90 0 0" radius="3" color="#4169E1" material="opacity: 0.6; transparent: true"></a-circle>
+        <a-torus position="10 0.1 40" radius="3" radius-tubular="0.05" rotation="90 0 0" color="#4682B4"></a-torus>
+        
+        <!-- Stepping stones -->
+        <a-cylinder position="8 0.1 38" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
+        <a-cylinder position="10 0.1 36" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
+        <a-cylinder position="12 0.1 38" radius="0.4" height="0.1" color="#D3D3D3" shadow></a-cylinder>
+        
+        <!-- Little bridges/ramps -->
+        <a-box position="-20 0.15 10" width="3" height="0.1" depth="1" color="#DEB887" rotation="0 0 5" shadow></a-box>
+        <a-box position="-17 0.2 10" width="3" height="0.1" depth="1" color="#DEB887" rotation="0 0 -3" shadow></a-box>
     </a-scene>
     
     <script>
         // Game State
         let gameRunning = true;
-        let playerHealth = 100;
-        let playerScore = 0;
-        let enemies = [];
-        let bullets = [];
-        // Adjusted move speed for 5x smaller world
-        let moveSpeed = 0.08;
         let joystickActive = false;
         let joystickVector = { x: 0, y: 0 };
         
+        // Movement speed adjusted for tiny player
+        let moveSpeed = 0.06;
+        
         // DOM Elements
-        const healthEl = document.getElementById('health');
-        const scoreEl = document.getElementById('score');
-        const enemiesLeftEl = document.getElementById('enemies-left');
-        const gameOverDiv = document.getElementById('game-over');
-        const finalScoreEl = document.getElementById('final-score');
-        const restartBtn = document.getElementById('restart-btn');
+        const posXEl = document.getElementById('pos-x');
+        const posZEl = document.getElementById('pos-z');
         
         // Touch Controls
         const moveJoystick = document.getElementById('move-joystick');
         const joystickHandle = document.getElementById('joystick-handle');
         const jumpBtn = document.getElementById('jump-btn');
-        const shootBtn = document.getElementById('shoot-btn');
         
         // A-Frame Elements
         const scene = document.querySelector('a-scene');
@@ -324,7 +315,7 @@
             joystickVector.y = deltaY / maxDistance;
         }
         
-        // Action Buttons
+        // Jump Button
         jumpBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (gameRunning) {
@@ -332,79 +323,30 @@
             }
         });
         
-        shootBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (gameRunning) {
-                shoot();
-            }
-        });
-        
-        // Jump Function - Adjusted for 5x smaller scale
+        // Jump Function
         function jump() {
             let pos = cameraRig.getAttribute('position');
-            if (pos.y <= 0.55) { // Ground level check
-                pos.y += 0.5; // Jump height
+            if (pos.y <= 0.35) { // Ground level check
+                pos.y += 0.3; // Jump height
                 cameraRig.setAttribute('position', pos);
+                
+                // Add a little squash and stretch effect?
+                if (player) {
+                    player.setAttribute('scale', '0.06 0.04 0.06');
+                }
                 
                 // Gravity pull down
                 setTimeout(() => {
                     let newPos = cameraRig.getAttribute('position');
-                    newPos.y -= 0.5;
+                    newPos.y -= 0.3;
                     cameraRig.setAttribute('position', newPos);
+                    
+                    // Reset scale
+                    if (player) {
+                        player.setAttribute('scale', '0.05 0.05 0.05');
+                    }
                 }, 250);
             }
-        }
-        
-        // Shoot Function
-        function shoot() {
-            if (!gameRunning) return;
-            
-            // Create bullet
-            const bullet = document.createElement('a-sphere');
-            bullet.setAttribute('radius', '0.08');
-            bullet.setAttribute('color', 'red');
-            bullet.setAttribute('dynamic-body', '');
-            
-            // Get camera position and direction
-            const cameraPos = camera.getAttribute('position');
-            const cameraRot = camera.getAttribute('rotation');
-            
-            // Calculate bullet direction based on camera rotation
-            const radY = THREE.MathUtils.degToRad(cameraRot.y);
-            const direction = {
-                x: -Math.sin(radY),
-                z: -Math.cos(radY)
-            };
-            
-            // Get world position of camera relative to rig
-            const rigPos = cameraRig.getAttribute('position');
-            
-            bullet.setAttribute('position', {
-                x: rigPos.x + cameraPos.x + direction.x,
-                y: rigPos.y + cameraPos.y - 0.1,
-                z: rigPos.z + cameraPos.z + direction.z
-            });
-            
-            scene.appendChild(bullet);
-            
-            // Store bullet data
-            bullets.push({
-                element: bullet,
-                direction: direction,
-                speed: 0.3
-            });
-            
-            // Visual feedback - muzzle flash
-            const flash = document.createElement('a-sphere');
-            flash.setAttribute('radius', '0.05');
-            flash.setAttribute('color', 'yellow');
-            flash.setAttribute('position', {
-                x: rigPos.x + cameraPos.x + direction.x,
-                y: rigPos.y + cameraPos.y - 0.1,
-                z: rigPos.z + cameraPos.z + direction.z
-            });
-            scene.appendChild(flash);
-            setTimeout(() => flash.remove(), 50);
         }
         
         // Move player based on joystick
@@ -429,222 +371,42 @@
                 pos.z += Math.cos(radY + Math.PI/2) * joystickVector.x * moveSpeed;
             }
             
-            // Keep player within bounds
-            pos.x = Math.max(-35, Math.min(35, pos.x));
-            pos.z = Math.max(-35, Math.min(35, pos.z));
+            // Keep player within bounds (massive world)
+            pos.x = Math.max(-90, Math.min(90, pos.x));
+            pos.z = Math.max(-90, Math.min(90, pos.z));
             
             cameraRig.setAttribute('position', pos);
-        }
-        
-        // Create enemies - Now 5x smaller
-        function createEnemies(count) {
-            for (let i = 0; i < count; i++) {
-                const enemy = document.createElement('a-entity');
-                enemy.setAttribute('class', 'enemy');
-                
-                // Random position
-                const angle = (i / count) * Math.PI * 2;
-                const distance = 8 + Math.random() * 6;
-                const x = Math.cos(angle) * distance;
-                const z = Math.sin(angle) * distance - 10;
-                
-                enemy.setAttribute('position', { x, y: 0, z });
-                
-                // Enemy model - 5x smaller (0.5/5 = 0.1)
-                const model = document.createElement('a-gltf-model');
-                model.setAttribute('src', '#enemy-model');
-                model.setAttribute('scale', '0.1 0.1 0.1');
-                model.setAttribute('animation-mixer', '');
-                enemy.appendChild(model);
-                
-                // Health bar - proportional
-                const healthBar = document.createElement('a-plane');
-                healthBar.setAttribute('class', 'enemy-health');
-                healthBar.setAttribute('width', '0.8');
-                healthBar.setAttribute('height', '0.08');
-                healthBar.setAttribute('color', 'red');
-                healthBar.setAttribute('position', '0 0.6 0');
-                enemy.appendChild(healthBar);
-                
-                scene.appendChild(enemy);
-                
-                enemies.push({
-                    element: enemy,
-                    health: 30,
-                    maxHealth: 30,
-                    speed: 0.015,
-                    lastShot: 0
-                });
-            }
             
-            enemiesLeftEl.textContent = `Enemies: ${enemies.length}`;
-        }
-        
-        // Enemy AI
-        function updateEnemies() {
-            if (!gameRunning) return;
+            // Update position display
+            posXEl.textContent = Math.round(pos.x * 10) / 10;
+            posZEl.textContent = Math.round(pos.z * 10) / 10;
             
-            const playerPos = cameraRig.getAttribute('position');
-            
-            enemies.forEach((enemy, index) => {
-                const enemyPos = enemy.element.getAttribute('position');
-                
-                // Move towards player
-                const dx = playerPos.x - enemyPos.x;
-                const dz = playerPos.z - enemyPos.z;
-                const dist = Math.sqrt(dx*dx + dz*dz);
-                
-                if (dist > 1.0) {
-                    enemyPos.x += (dx / dist) * enemy.speed;
-                    enemyPos.z += (dz / dist) * enemy.speed;
-                    enemy.element.setAttribute('position', enemyPos);
-                }
-                
-                // Attack
-                if (dist < 1.2 && Date.now() - enemy.lastShot > 1800) {
-                    enemy.lastShot = Date.now();
-                    playerHealth -= 8;
-                    healthEl.textContent = playerHealth;
-                    
-                    if (playerHealth <= 0) {
-                        gameOver('You Died!');
-                    }
-                    
-                    // Attack visual
-                    const attack = document.createElement('a-sphere');
-                    attack.setAttribute('radius', '0.1');
-                    attack.setAttribute('color', 'orange');
-                    attack.setAttribute('position', enemyPos);
-                    scene.appendChild(attack);
-                    setTimeout(() => attack.remove(), 150);
-                }
-                
-                // Update health bar
-                const healthBar = enemy.element.querySelector('.enemy-health');
-                if (healthBar) {
-                    const healthPercent = enemy.health / enemy.maxHealth;
-                    healthBar.setAttribute('width', 0.8 * healthPercent);
-                    healthBar.setAttribute('position', `${-(0.4 - (0.4 * healthPercent))} 0.6 0`);
-                }
-            });
-        }
-        
-        // Update bullets
-        function updateBullets() {
-            bullets = bullets.filter(bullet => {
-                const pos = bullet.element.getAttribute('position');
-                
-                // Move bullet
-                pos.x += bullet.direction.x * bullet.speed;
-                pos.z += bullet.direction.z * bullet.speed;
-                bullet.element.setAttribute('position', pos);
-                
-                // Check collision with enemies
-                let hit = false;
-                enemies.forEach((enemy, enemyIndex) => {
-                    const enemyPos = enemy.element.getAttribute('position');
-                    const dist = Math.sqrt(
-                        Math.pow(pos.x - enemyPos.x, 2) + 
-                        Math.pow(pos.z - enemyPos.z, 2)
-                    );
-                    
-                    if (dist < 0.6) {
-                        hit = true;
-                        enemy.health -= 20;
-                        
-                        // Hit effect
-                        const hitEffect = document.createElement('a-sphere');
-                        hitEffect.setAttribute('radius', '0.15');
-                        hitEffect.setAttribute('color', 'yellow');
-                        hitEffect.setAttribute('position', enemyPos);
-                        scene.appendChild(hitEffect);
-                        setTimeout(() => hitEffect.remove(), 100);
-                        
-                        if (enemy.health <= 0) {
-                            // Enemy defeated
-                            enemy.element.remove();
-                            enemies.splice(enemyIndex, 1);
-                            playerScore += 100;
-                            scoreEl.textContent = playerScore;
-                            enemiesLeftEl.textContent = `Enemies: ${enemies.length}`;
-                            
-                            // Victory check
-                            if (enemies.length === 0) {
-                                gameOver('VICTORY!', true);
-                            }
-                        }
-                    }
-                });
-                
-                if (hit || Math.abs(pos.x) > 40 || Math.abs(pos.z) > 40) {
-                    bullet.element.remove();
-                    return false;
-                }
-                
-                return true;
-            });
-        }
-        
-        // Game Over
-        function gameOver(message, victory = false) {
-            gameRunning = false;
-            gameOverDiv.style.display = 'block';
-            document.getElementById('game-over-text').textContent = message;
-            finalScoreEl.textContent = playerScore;
-            
-            if (victory) {
-                gameOverDiv.style.background = 'rgba(0, 100, 0, 0.8)';
-            } else {
-                gameOverDiv.style.background = 'rgba(100, 0, 0, 0.8)';
+            // Simple idle animation - slight bob when moving
+            if (joystickActive && player) {
+                const time = Date.now() * 0.01;
+                const bobY = Math.sin(time) * 0.01;
+                player.setAttribute('position', { x: 0, y: bobY, z: 0 });
+            } else if (player) {
+                player.setAttribute('position', { x: 0, y: 0, z: 0 });
             }
         }
-        
-        // Restart Game
-        function restartGame() {
-            // Reset game state
-            gameRunning = true;
-            playerHealth = 100;
-            playerScore = 0;
-            healthEl.textContent = playerHealth;
-            scoreEl.textContent = playerScore;
-            
-            // Remove all enemies
-            enemies.forEach(enemy => enemy.element.remove());
-            enemies = [];
-            
-            // Remove all bullets
-            bullets.forEach(bullet => bullet.element.remove());
-            bullets = [];
-            
-            // Reset player position
-            cameraRig.setAttribute('position', { x: 0, y: 0.5, z: 0 });
-            
-            // Reset camera rotation
-            camera.setAttribute('rotation', { x: 0, y: 0, z: 0 });
-            
-            // Hide game over screen
-            gameOverDiv.style.display = 'none';
-            
-            // Create new enemies
-            createEnemies(5);
-        }
-        
-        restartBtn.addEventListener('click', restartGame);
         
         // Game Loop
         function gameLoop() {
             if (gameRunning) {
                 movePlayer();
-                updateEnemies();
-                updateBullets();
             }
             requestAnimationFrame(gameLoop);
         }
         
-        // Initialize game when scene loads
+        // Initialize when scene loads
         scene.addEventListener('loaded', () => {
-            console.log('Scene loaded - 5x smaller characters, 3rd person camera');
-            createEnemies(5);
+            console.log('Scene loaded - Tiny player world!');
+            
+            // Set initial position
+            cameraRig.setAttribute('position', { x: 0, y: 0.3, z: 0 });
+            
+            // Start game loop
             gameLoop();
         });
         
@@ -657,9 +419,14 @@
                     e.preventDefault();
                     jump();
                     break;
-                case 'f':
-                case 'F':
-                    shoot();
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    // Handle through joystick? Just trigger jump for arrow up
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        jump();
+                    }
                     break;
             }
         });
@@ -670,6 +437,28 @@
                 e.preventDefault();
             }
         }, { passive: false });
+        
+        // Add some random floating particles for magic effect
+        function createFloatingParticles() {
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('a-sphere');
+                    particle.setAttribute('radius', '0.05');
+                    particle.setAttribute('color', `hsl(${Math.random() * 360}, 80%, 70%)`);
+                    particle.setAttribute('position', {
+                        x: (Math.random() - 0.5) * 80,
+                        y: Math.random() * 5,
+                        z: (Math.random() - 0.5) * 80
+                    });
+                    particle.setAttribute('animation', 'property: position; to: 0 10 0; dur: 5000; easing: linear; loop: true');
+                    particle.setAttribute('material', 'transparent: true; opacity: 0.6');
+                    scene.appendChild(particle);
+                }, i * 200);
+            }
+        }
+        
+        // Add particles after scene loads
+        setTimeout(createFloatingParticles, 2000);
     </script>
 </body>
-    </html>
+</html>
