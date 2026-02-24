@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Fixed Version</title>
+    <title>Mini World Explorer - Proper Animations</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -51,6 +51,7 @@
             backdrop-filter: blur(5px); border: 2px solid #4a9eff;
             display: flex; justify-content: center; align-items: center;
             touch-action: none;
+            box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
         }
         
         .joystick {
@@ -61,6 +62,8 @@
         
         .action-buttons {
             display: flex; gap: 15px; pointer-events: auto;
+            flex-wrap: wrap; justify-content: flex-end;
+            max-width: 300px;
         }
         
         .action-btn {
@@ -68,6 +71,8 @@
             background: rgba(30, 30, 50, 0.8); border: 3px solid #4a9eff;
             color: white; font-size: 14px; font-weight: bold;
             backdrop-filter: blur(5px); cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
         }
         
         .action-btn:active { transform: scale(0.9); background: #4a9eff; }
@@ -83,6 +88,7 @@
         }
         
         #hud .title { font-size: 24px; font-weight: bold; color: #4a9eff; }
+        
         #anim-status {
             position: fixed; bottom: 200px; left: 50%;
             transform: translateX(-50%);
@@ -90,6 +96,9 @@
             background: rgba(30, 30, 50, 0.9); padding: 10px 30px;
             border-radius: 40px; border: 2px solid #4a9eff;
             z-index: 1000; backdrop-filter: blur(5px);
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
+            min-width: 200px;
+            text-align: center;
         }
         
         #controls-hint {
@@ -100,12 +109,14 @@
             border: 1px solid #4a9eff; z-index: 1000;
         }
         
-        #error-message {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ff4757; background: rgba(0,0,0,0.9);
-            padding: 20px; border-radius: 10px;
-            z-index: 3000; display: none;
+        #debug-animation {
+            position: fixed; top: 20px; right: 20px;
+            color: #4a9eff; background: rgba(30, 30, 50, 0.8);
+            padding: 10px; border-radius: 10px;
+            border: 1px solid #4a9eff; z-index: 1000;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -119,8 +130,6 @@
         </div>
     </div>
 
-    <div id="error-message"></div>
-
     <div id="hud">
         <div class="title">⚔️ MINI EXPLORER</div>
         <div>X: <span id="pos-x">0.0</span> Z: <span id="pos-z">0.0</span></div>
@@ -128,6 +137,7 @@
     
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Buttons for actions</div>
+    <div id="debug-animation">Available animations: loading...</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -148,22 +158,22 @@
             <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg">
         </a-assets>
 
-        <!-- SIMPLE CAMERA SYSTEM: Camera directly follows player -->
+        <!-- Player Character -->
         <a-entity id="player" position="0 0.06 0">
             <a-gltf-model 
                 id="player-model-instance" 
                 src="#player-model"
                 scale="0.003 0.003 0.003"
-                animation-mixer>
+                animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.2">
             </a-gltf-model>
             
-            <!-- Gun placed at approximate hand position (will be adjusted by JS) -->
+            <!-- Gun -->
             <a-entity id="gun" position="0.3 0.3 0.3" rotation="0 90 0" scale="0.0025 0.0025 0.0025">
-                <a-gltf-model src="#gun-model" visible="false" id="gun-model-instance"></a-gltf-model>
+                <a-gltf-model id="gun-model-instance" src="#gun-model"></a-gltf-model>
             </a-entity>
         </a-entity>
 
-        <!-- Camera positioned relative to player -->
+        <!-- Camera -->
         <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.3 0.6"></a-camera>
         
         <!-- Lighting -->
@@ -180,29 +190,69 @@
     </a-scene>
     
     <script>
-        // SIMPLIFIED VERSION - NO COMPLEX COMPONENTS
         (function() {
-            console.log('Starting Mini World Explorer...');
+            console.log('Starting Mini World Explorer with proper animations...');
             
-            // Get elements
+            // ===== ANIMATION MAPPING =====
+            // Based on your screenshot, exact animation names from Player.glb
+            const ANIMATIONS = {
+                // Movement animations
+                IDLE: 'idle',
+                RUN_FORWARD: 'run-forward',
+                RUN_BACKWARDS: 'run-backwards',
+                RUN_LEFT: 'run-left',
+                RUN_RIGHT: 'run-right',
+                WALK_FORWARD: 'walk-forward',
+                WALK_BACKWARDS: 'walk-backwards',
+                WALK_LEFT: 'walk-left',
+                WALK_RIGHT: 'walk-right',
+                
+                // Action animations (one-shot)
+                JUMP: 'jump',
+                SHOOT_RIFLE: 'shoot-rifle',
+                SHOOT_PISTOL: 'shoot-pistol',
+                THROW_GRENADE: 'throw-grenade',
+                RELOADING: 'reloading',
+                HIT_REACTION_1: 'hit-reaction-1',
+                HIT_REACTION_2: 'hit-reaction-2',
+                
+                // T-pose (for debugging)
+                T_POSE: 't-pose'
+            };
+            
+            // Animation durations (in milliseconds) for one-shot animations
+            const ANIMATION_DURATIONS = {
+                [ANIMATIONS.JUMP]: 500,
+                [ANIMATIONS.SHOOT_RIFLE]: 600,
+                [ANIMATIONS.SHOOT_PISTOL]: 500,
+                [ANIMATIONS.THROW_GRENADE]: 800,
+                [ANIMATIONS.RELOADING]: 700,
+                [ANIMATIONS.HIT_REACTION_1]: 500,
+                [ANIMATIONS.HIT_REACTION_2]: 500
+            };
+            
+            // ===== DOM Elements =====
             const loadingScreen = document.getElementById('loading-screen');
             const loadingStatus = document.getElementById('loading-status');
             const animStatus = document.getElementById('anim-status');
+            const debugAnim = document.getElementById('debug-animation');
             const posX = document.getElementById('pos-x');
             const posZ = document.getElementById('pos-z');
-            const errorMsg = document.getElementById('error-message');
             
-            // State
+            // ===== State =====
             let joystickActive = false;
             let joystickX = 0;
             let joystickY = 0;
             let isJumping = false;
-            let playerY = 0.06;
+            let currentAnimation = ANIMATIONS.IDLE;
+            let animationTimeout = null;
+            let availableAnimations = [];
             
             // Movement speed
-            const MOVE_SPEED = 0.02;
+            const WALK_SPEED = 0.015;
+            const RUN_SPEED = 0.025;
             
-            // Get A-Frame elements
+            // ===== A-Frame Elements =====
             const scene = document.querySelector('a-scene');
             const player = document.getElementById('player');
             const camera = document.getElementById('camera');
@@ -210,7 +260,168 @@
             const gun = document.getElementById('gun');
             const gunModel = document.getElementById('gun-model-instance');
             
-            // Simple joystick setup
+            // ===== Animation Control =====
+            function setAnimation(animName, isOneShot = false) {
+                if (!playerModel || !animName) return;
+                
+                // Don't interrupt jump with other animations
+                if (isJumping && animName !== ANIMATIONS.JUMP) return;
+                
+                // Clear any pending timeout
+                if (animationTimeout) {
+                    clearTimeout(animationTimeout);
+                    animationTimeout = null;
+                }
+                
+                // Update current animation
+                currentAnimation = animName;
+                
+                // Update UI
+                let displayName = animName.toUpperCase();
+                if (animName === ANIMATIONS.IDLE) displayName = 'IDLE';
+                else if (animName.includes('run')) displayName = '🏃 RUNNING';
+                else if (animName.includes('walk')) displayName = '🚶 WALKING';
+                else if (animName === ANIMATIONS.SHOOT_RIFLE || animName === ANIMATIONS.SHOOT_PISTOL) displayName = '🔫 SHOOTING';
+                else if (animName === ANIMATIONS.JUMP) displayName = '🦘 JUMPING';
+                else if (animName === ANIMATIONS.THROW_GRENADE) displayName = '💣 GRENADE';
+                else if (animName === ANIMATIONS.RELOADING) displayName = '🔄 RELOADING';
+                else if (animName.includes('hit')) displayName = '💥 HIT';
+                
+                animStatus.textContent = displayName;
+                
+                // Set the animation
+                try {
+                    playerModel.setAttribute('animation-mixer', {
+                        clip: animName,
+                        loop: isOneShot ? 'once' : 'repeat',
+                        crossFadeDuration: 0.2,
+                        timeScale: 1.0
+                    });
+                    
+                    console.log('Playing animation:', animName);
+                } catch (e) {
+                    console.warn('Could not play animation:', animName);
+                }
+                
+                // If one-shot animation, return to appropriate animation after duration
+                if (isOneShot) {
+                    const duration = ANIMATION_DURATIONS[animName] || 500;
+                    
+                    animationTimeout = setTimeout(() => {
+                        if (isJumping && animName === ANIMATIONS.JUMP) {
+                            // Jump will handle its own completion
+                            return;
+                        }
+                        
+                        if (joystickActive) {
+                            // Return to movement animation
+                            updateMovementAnimation();
+                        } else {
+                            // Return to idle
+                            setAnimation(ANIMATIONS.IDLE);
+                        }
+                        animationTimeout = null;
+                    }, duration);
+                }
+            }
+            
+            function updateMovementAnimation() {
+                if (isJumping || !joystickActive) return;
+                
+                const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
+                
+                if (magnitude < 0.1) {
+                    setAnimation(ANIMATIONS.IDLE);
+                    return;
+                }
+                
+                const isRunning = magnitude > 0.7;
+                
+                // Determine direction based on joystick input
+                if (Math.abs(joystickX) > Math.abs(joystickY)) {
+                    // Strafe left/right
+                    if (joystickX > 0) {
+                        setAnimation(isRunning ? ANIMATIONS.RUN_RIGHT : ANIMATIONS.WALK_RIGHT);
+                    } else {
+                        setAnimation(isRunning ? ANIMATIONS.RUN_LEFT : ANIMATIONS.WALK_LEFT);
+                    }
+                } else {
+                    // Forward/backward
+                    if (joystickY > 0) {
+                        setAnimation(isRunning ? ANIMATIONS.RUN_FORWARD : ANIMATIONS.WALK_FORWARD);
+                    } else {
+                        setAnimation(isRunning ? ANIMATIONS.RUN_BACKWARDS : ANIMATIONS.WALK_BACKWARDS);
+                    }
+                }
+            }
+            
+            // ===== Jump Function =====
+            function jump() {
+                if (isJumping) return;
+                
+                isJumping = true;
+                setAnimation(ANIMATIONS.JUMP, true);
+                
+                const startY = player.getAttribute('position').y;
+                const jumpStart = Date.now();
+                const JUMP_DURATION = 500;
+                const JUMP_HEIGHT = 0.08;
+                
+                function animateJump() {
+                    const elapsed = Date.now() - jumpStart;
+                    const progress = Math.min(elapsed / JUMP_DURATION, 1);
+                    
+                    if (progress >= 1) {
+                        const pos = player.getAttribute('position');
+                        pos.y = 0.06;
+                        player.setAttribute('position', pos);
+                        isJumping = false;
+                        
+                        // Return to appropriate animation
+                        if (joystickActive) {
+                            updateMovementAnimation();
+                        } else {
+                            setAnimation(ANIMATIONS.IDLE);
+                        }
+                        return;
+                    }
+                    
+                    // Parabolic arc
+                    const jumpProgress = Math.sin(progress * Math.PI);
+                    const pos = player.getAttribute('position');
+                    pos.y = startY + (JUMP_HEIGHT * jumpProgress);
+                    player.setAttribute('position', pos);
+                    
+                    requestAnimationFrame(animateJump);
+                }
+                
+                animateJump();
+            }
+            
+            // ===== Shoot Function =====
+            function shoot() {
+                if (isJumping) return;
+                setAnimation(ANIMATIONS.SHOOT_RIFLE, true);
+                
+                // Muzzle flash
+                if (gunModel) {
+                    gunModel.setAttribute('material', 'emissive', '#FF5500');
+                    gunModel.setAttribute('material', 'emissiveIntensity', '2.0');
+                    
+                    setTimeout(() => {
+                        gunModel.setAttribute('material', 'emissive', '#000000');
+                        gunModel.setAttribute('material', 'emissiveIntensity', '0');
+                    }, 100);
+                }
+            }
+            
+            // ===== Throw Grenade =====
+            function throwGrenade() {
+                if (isJumping) return;
+                setAnimation(ANIMATIONS.THROW_GRENADE, true);
+            }
+            
+            // ===== Joystick Setup =====
             const moveJoystick = document.getElementById('move-joystick');
             const joystickHandle = document.getElementById('joystick-handle');
             
@@ -231,7 +442,10 @@
                 joystickX = 0;
                 joystickY = 0;
                 joystickHandle.style.transform = 'translate(0px, 0px)';
-                if (animStatus && !isJumping) animStatus.textContent = 'IDLE';
+                
+                if (!isJumping) {
+                    setAnimation(ANIMATIONS.IDLE);
+                }
             });
             
             function updateJoystick(touch) {
@@ -254,68 +468,84 @@
                 joystickX = deltaX / maxDistance;
                 joystickY = deltaY / maxDistance;
                 
-                if (animStatus && !isJumping) {
-                    animStatus.textContent = Math.abs(joystickX) > 0.7 || Math.abs(joystickY) > 0.7 ? 'RUNNING' : 'WALKING';
+                if (!isJumping) {
+                    updateMovementAnimation();
                 }
             }
             
-            // Action buttons
+            // ===== Button Setup =====
             document.getElementById('jump-btn').addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                if (!isJumping) {
-                    isJumping = true;
-                    animStatus.textContent = 'JUMP';
-                    playerY = 0.06;
-                    
-                    // Simple jump animation
-                    let jumpTime = 0;
-                    const jumpInterval = setInterval(() => {
-                        jumpTime += 50;
-                        const progress = jumpTime / 400; // 400ms jump
-                        
-                        if (progress >= 1) {
-                            clearInterval(jumpInterval);
-                            player.setAttribute('position', {x: player.getAttribute('position').x, y: 0.06, z: player.getAttribute('position').z});
-                            isJumping = false;
-                            if (!joystickActive) animStatus.textContent = 'IDLE';
-                        } else {
-                            const jumpY = 0.06 + Math.sin(progress * Math.PI) * 0.08;
-                            player.setAttribute('position', {x: player.getAttribute('position').x, y: jumpY, z: player.getAttribute('position').z});
-                        }
-                    }, 50);
-                }
+                jump();
             });
             
             document.getElementById('shoot-btn').addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                animStatus.textContent = 'SHOOT';
-                
-                // Muzzle flash
-                if (gunModel) {
-                    gunModel.setAttribute('material', 'emissive', '#FF5500');
-                    gunModel.setAttribute('material', 'emissiveIntensity', '2.0');
-                    gunModel.setAttribute('visible', 'true');
-                    
-                    setTimeout(() => {
-                        gunModel.setAttribute('material', 'emissive', '#000000');
-                        gunModel.setAttribute('material', 'emissiveIntensity', '0');
-                    }, 100);
-                }
-                
-                setTimeout(() => {
-                    if (!joystickActive && !isJumping) animStatus.textContent = 'IDLE';
-                }, 500);
+                shoot();
             });
             
             document.getElementById('grenade-btn').addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                animStatus.textContent = 'GRENADE';
-                setTimeout(() => {
-                    if (!joystickActive && !isJumping) animStatus.textContent = 'IDLE';
-                }, 800);
+                throwGrenade();
             });
             
-            // Handle model loading
+            // Keyboard fallback
+            window.addEventListener('keydown', (e) => {
+                switch(e.key) {
+                    case ' ': e.preventDefault(); jump(); break;
+                    case 'f': e.preventDefault(); shoot(); break;
+                    case 'g': e.preventDefault(); throwGrenade(); break;
+                }
+            });
+            
+            // ===== Movement =====
+            function movePlayer() {
+                if (!joystickActive || isJumping || !player || !camera) return;
+                
+                const playerPos = player.getAttribute('position');
+                const cameraRot = camera.getAttribute('rotation');
+                
+                const radY = THREE.MathUtils.degToRad(cameraRot.y);
+                const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
+                const speed = magnitude > 0.7 ? RUN_SPEED : WALK_SPEED;
+                
+                // Forward/back
+                if (joystickY !== 0) {
+                    playerPos.x += Math.sin(radY) * joystickY * speed * -1;
+                    playerPos.z += Math.cos(radY) * joystickY * speed * -1;
+                }
+                
+                // Strafe
+                if (joystickX !== 0) {
+                    playerPos.x += Math.sin(radY + Math.PI/2) * joystickX * speed;
+                    playerPos.z += Math.cos(radY + Math.PI/2) * joystickX * speed;
+                }
+                
+                // Keep in bounds
+                playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
+                playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
+                
+                player.setAttribute('position', playerPos);
+            }
+            
+            // ===== Camera Follow =====
+            function updateCamera() {
+                if (!player || !camera) return;
+                
+                const playerPos = player.getAttribute('position');
+                
+                camera.setAttribute('position', {
+                    x: playerPos.x,
+                    y: playerPos.y + 0.3,
+                    z: playerPos.z + 0.6
+                });
+                
+                // Update HUD
+                if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
+                if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
+            }
+            
+            // ===== Model Loading =====
             let modelsLoaded = 0;
             
             if (playerModel) {
@@ -324,17 +554,27 @@
                     modelsLoaded++;
                     loadingStatus.textContent = '✓ Player loaded, loading gun...';
                     
-                    // Make gun visible after player loads
+                    // Get available animations
                     setTimeout(() => {
-                        if (gunModel) gunModel.setAttribute('visible', 'true');
-                    }, 500);
+                        try {
+                            const mixer = playerModel.components['animation-mixer'];
+                            if (mixer && mixer.clips) {
+                                availableAnimations = mixer.clips.map(clip => clip.name);
+                                debugAnim.innerHTML = '🎬 Available animations:<br>' + 
+                                    availableAnimations.map(a => '• ' + a).join('<br>');
+                                console.log('Available animations:', availableAnimations);
+                            }
+                        } catch(e) {
+                            console.warn('Could not get animation list');
+                        }
+                    }, 1000);
                     
                     checkAllLoaded();
                 });
                 
                 playerModel.addEventListener('error', (e) => {
                     console.error('Player model error:', e);
-                    loadingStatus.textContent = '⚠️ Using simple player';
+                    loadingStatus.textContent = '⚠️ Using fallback';
                     modelsLoaded++;
                     checkAllLoaded();
                 });
@@ -345,6 +585,9 @@
                     console.log('✅ Gun model loaded');
                     modelsLoaded++;
                     loadingStatus.textContent = '✓ Gun loaded';
+                    
+                    // Make gun visible
+                    gunModel.setAttribute('visible', 'true');
                     checkAllLoaded();
                 });
                 
@@ -352,7 +595,7 @@
                     console.error('Gun model error:', e);
                     loadingStatus.textContent = '⚠️ Using simple gun';
                     
-                    // Create simple gun as fallback
+                    // Create simple gun
                     const simpleGun = document.createElement('a-box');
                     simpleGun.setAttribute('width', '0.2');
                     simpleGun.setAttribute('height', '0.1');
@@ -375,11 +618,9 @@
                         try {
                             const model = playerModel.getObject3D('mesh');
                             if (model) {
-                                console.log('Searching for hand bone...');
                                 model.traverse((node) => {
                                     if (node.isBone && node.name.toLowerCase().includes('hand')) {
                                         console.log('Found hand bone:', node.name);
-                                        // Reparent gun to bone
                                         const gunObj = gun.object3D;
                                         const parent = gunObj.parent;
                                         if (parent) parent.remove(gunObj);
@@ -390,7 +631,7 @@
                                 });
                             }
                         } catch(e) {
-                            console.log('Could not attach to bone, using default position');
+                            console.log('Could not attach to bone');
                         }
                     }, 1000);
                     
@@ -400,88 +641,31 @@
                             loadingScreen.style.display = 'none';
                         }, 500);
                     }, 1000);
+                    
+                    // Start idle animation
+                    setAnimation(ANIMATIONS.IDLE);
                 }
             }
             
-            // SIMPLE CAMERA FOLLOW - Direct update every frame
-            function updateCamera() {
-                if (!player || !camera) return;
-                
-                const playerPos = player.getAttribute('position');
-                
-                // Camera follows player position exactly
-                camera.setAttribute('position', {
-                    x: playerPos.x,
-                    y: playerPos.y + 0.3,
-                    z: playerPos.z + 0.6
-                });
-                
-                // Update HUD
-                if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
-                if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
-            }
-            
-            // MOVEMENT - Direct position update
-            function movePlayer() {
-                if (!joystickActive || isJumping || !player || !camera) return;
-                
-                const playerPos = player.getAttribute('position');
-                const cameraRot = camera.getAttribute('rotation');
-                
-                const radY = THREE.MathUtils.degToRad(cameraRot.y);
-                
-                // Forward/back
-                if (joystickY !== 0) {
-                    playerPos.x += Math.sin(radY) * joystickY * MOVE_SPEED * -1;
-                    playerPos.z += Math.cos(radY) * joystickY * MOVE_SPEED * -1;
-                }
-                
-                // Strafe
-                if (joystickX !== 0) {
-                    playerPos.x += Math.sin(radY + Math.PI/2) * joystickX * MOVE_SPEED;
-                    playerPos.z += Math.cos(radY + Math.PI/2) * joystickX * MOVE_SPEED;
-                }
-                
-                // Keep in bounds
-                playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
-                playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
-                
-                player.setAttribute('position', playerPos);
-            }
-            
-            // Simple animation loop
+            // ===== Game Loop =====
             function gameLoop() {
                 movePlayer();
                 updateCamera();
                 requestAnimationFrame(gameLoop);
             }
             
-            // Start when scene loads
+            // Start
             scene.addEventListener('loaded', () => {
-                console.log('Scene loaded, starting game loop');
+                console.log('Scene loaded');
                 gameLoop();
-                
-                // Set initial idle animation
-                setTimeout(() => {
-                    if (animStatus) animStatus.textContent = 'IDLE';
-                }, 500);
             });
             
-            // Fallback in case scene loaded event already fired
+            // Fallback start
             setTimeout(() => {
                 if (!loadingScreen.style.display) {
-                    console.log('Force starting...');
                     gameLoop();
                 }
             }, 3000);
-            
-            // Error handler
-            window.addEventListener('error', (e) => {
-                console.error('Global error:', e.error);
-                errorMsg.style.display = 'block';
-                errorMsg.innerHTML = 'Error: ' + e.error.message;
-                loadingStatus.textContent = '⚠️ Error - Check console';
-            });
         })();
     </script>
 </body>
