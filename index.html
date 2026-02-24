@@ -3,248 +3,132 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Your Character Model</title>
+    <title>Mini World Explorer - Fixed Version</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://unpkg.com/aframe-physics-system@4.0.1/dist/aframe-physics-system.min.js"></script>
     
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Arial', sans-serif;
-        }
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         
-        /* Loading Screen */
         #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            transition: opacity 0.5s;
-            color: white;
-            text-align: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; transition: opacity 0.5s;
+            color: white; text-align: center;
         }
         
         .loading-content {
-            background: rgba(0,0,0,0.5);
-            padding: 40px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 2px solid #4a4a8a;
+            background: rgba(0,0,0,0.5); padding: 40px;
+            border-radius: 20px; backdrop-filter: blur(10px);
         }
         
         .spinner {
-            width: 50px;
-            height: 50px;
+            width: 50px; height: 50px;
             border: 5px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #4a9eff;
+            border-radius: 50%; border-top-color: #4a9eff;
             animation: spin 1s ease-in-out infinite;
             margin: 20px auto;
         }
         
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .loading-status {
-            font-size: 18px;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: rgba(74, 74, 138, 0.5);
+        #loading-status {
+            font-size: 18px; margin-top: 20px;
+            padding: 10px 20px; background: rgba(74, 158, 255, 0.3);
             border-radius: 30px;
         }
         
-        .progress-bar {
-            width: 300px;
-            height: 10px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            margin: 20px auto;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #4a9eff, #9f7aea);
-            transition: width 0.3s;
-        }
-        
-        /* Touch Controls */
         #touch-controls {
-            position: fixed;
-            bottom: 30px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-            pointer-events: none;
-            z-index: 1000;
+            position: fixed; bottom: 30px; left: 0; right: 0;
+            display: flex; justify-content: space-between; padding: 20px;
+            pointer-events: none; z-index: 1000;
         }
         
         .joystick-area {
-            pointer-events: auto;
-            width: 120px;
-            height: 120px;
-            background: rgba(30, 30, 50, 0.8);
-            border-radius: 60px;
-            backdrop-filter: blur(5px);
-            border: 2px solid #4a9eff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            pointer-events: auto; width: 120px; height: 120px;
+            background: rgba(30, 30, 50, 0.8); border-radius: 60px;
+            backdrop-filter: blur(5px); border: 2px solid #4a9eff;
+            display: flex; justify-content: center; align-items: center;
             touch-action: none;
-            box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
         }
         
         .joystick {
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 25px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-            transition: transform 0.05s ease-out;
-            border: 2px solid #4a9eff;
+            width: 50px; height: 50px; background: white;
+            border-radius: 25px; border: 2px solid #4a9eff;
+            transition: transform 0.05s;
         }
         
         .action-buttons {
-            display: flex;
-            gap: 15px;
-            pointer-events: auto;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            max-width: 300px;
+            display: flex; gap: 15px; pointer-events: auto;
         }
         
         .action-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 35px;
-            background: rgba(30, 30, 50, 0.8);
-            border: 3px solid #4a9eff;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            backdrop-filter: blur(5px);
-            cursor: pointer;
-            transition: all 0.1s;
-            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
+            width: 70px; height: 70px; border-radius: 35px;
+            background: rgba(30, 30, 50, 0.8); border: 3px solid #4a9eff;
+            color: white; font-size: 14px; font-weight: bold;
+            backdrop-filter: blur(5px); cursor: pointer;
         }
         
-        .action-btn:active { 
-            transform: scale(0.9); 
-            background: #4a9eff;
-            box-shadow: 0 0 30px #4a9eff;
-        }
-        
+        .action-btn:active { transform: scale(0.9); background: #4a9eff; }
         #jump-btn { border-color: #ffaa00; }
         #shoot-btn { border-color: #ff4757; }
         #grenade-btn { border-color: #9f7aea; }
         
-        /* HUD */
         #hud {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(30, 30, 50, 0.8);
-            padding: 15px 25px;
-            border-radius: 10px;
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-            border: 2px solid #4a9eff;
-            box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
+            position: fixed; top: 20px; left: 20px; color: white;
+            background: rgba(30, 30, 50, 0.8); padding: 15px 25px;
+            border-radius: 10px; backdrop-filter: blur(5px);
+            border: 2px solid #4a9eff; z-index: 1000;
         }
         
-        #hud .title { 
-            font-size: 24px; 
-            font-weight: bold; 
-            color: #4a9eff;
-            text-shadow: 0 0 10px #4a9eff;
-        }
-        #hud .size { color: #88ff88; }
-        #hud .position { color: #88aaff; }
-        
+        #hud .title { font-size: 24px; font-weight: bold; color: #4a9eff; }
         #anim-status {
-            position: fixed;
-            bottom: 200px;
-            left: 50%;
+            position: fixed; bottom: 200px; left: 50%;
             transform: translateX(-50%);
-            color: #4a9eff;
-            font-size: 24px;
-            font-weight: bold;
-            background: rgba(30, 30, 50, 0.9);
-            padding: 10px 30px;
-            border-radius: 40px;
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-            border: 2px solid #4a9eff;
-            text-shadow: 0 0 10px #4a9eff;
-            box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
+            color: #4a9eff; font-size: 24px; font-weight: bold;
+            background: rgba(30, 30, 50, 0.9); padding: 10px 30px;
+            border-radius: 40px; border: 2px solid #4a9eff;
+            z-index: 1000; backdrop-filter: blur(5px);
         }
         
         #controls-hint {
-            position: fixed;
-            bottom: 120px;
-            left: 50%;
+            position: fixed; bottom: 120px; left: 50%;
             transform: translateX(-50%);
-            color: white;
-            background: rgba(30, 30, 50, 0.8);
-            padding: 10px 25px;
-            border-radius: 30px;
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-            border: 1px solid #4a9eff;
+            color: white; background: rgba(30, 30, 50, 0.8);
+            padding: 10px 25px; border-radius: 30px;
+            border: 1px solid #4a9eff; z-index: 1000;
         }
         
-        #debug-info {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            color: #4a9eff;
-            background: rgba(30, 30, 50, 0.8);
-            padding: 8px 15px;
-            border-radius: 20px;
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-            font-size: 12px;
-            border: 1px solid #4a9eff;
+        #error-message {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff4757; background: rgba(0,0,0,0.9);
+            padding: 20px; border-radius: 10px;
+            z-index: 3000; display: none;
         }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>featuring YOUR character model</h3>
+            <h3>with YOUR character model</h3>
             <div class="spinner"></div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
-            </div>
-            <div class="loading-status" id="loading-status">Loading Player.glb...</div>
+            <div id="loading-status">Loading Player.glb...</div>
         </div>
     </div>
 
-    <!-- HUD -->
+    <div id="error-message"></div>
+
     <div id="hud">
         <div class="title">⚔️ MINI EXPLORER</div>
-        <div class="size">Scale: <span style="color: #88ff88;">0.0030</span></div>
-        <div class="position">X: <span id="pos-x">0.0</span> Y: <span id="pos-y">0.0</span> Z: <span id="pos-z">0.0</span></div>
+        <div>X: <span id="pos-x">0.0</span> Z: <span id="pos-z">0.0</span></div>
     </div>
     
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Buttons for actions</div>
-    <div id="debug-info">🎮 Your Player Model | Gun attached to hand</div>
 
-    <!-- Mobile Touch Controls -->
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
             <div class="joystick" id="joystick-handle"></div>
@@ -257,699 +141,347 @@
         </div>
     </div>
     
-    <!-- A-Frame Scene -->
-    <a-scene background="color: #1a1a2e" shadow="type: pcfsoft" renderer="antialias: true; colorManagement: true;">
-        <!-- Assets - Using your local files -->
+    <a-scene background="color: #1a1a2e" shadow="type: pcfsoft" vr-mode-ui="enabled: false">
         <a-assets>
             <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
             <a-asset-item id="gun-model" src="Mpsd.glb"></a-asset-item>
-            
-            <!-- Environment -->
             <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg">
         </a-assets>
 
-        <!-- Camera Follow System -->
-        <a-entity id="camera-follow-rig">
-            <!-- Player Character (your model) -->
-            <a-entity id="player" position="0 0.06 0">
-                <a-gltf-model 
-                    id="player-model-instance" 
-                    src="#player-model"
-                    scale="0.0030 0.0030 0.0030" 
-                    position="0 0 0"
-                    animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.2"
-                    shadow="cast: true; receive: true">
-                </a-gltf-model>
-                
-                <!-- Gun (will be attached to hand bone) -->
-                <a-entity id="gun-holder">
-                    <a-gltf-model 
-                        id="gun-model-instance" 
-                        src="#gun-model" 
-                        scale="0.0025 0.0025 0.0025"
-                        position="0 0 0"
-                        rotation="0 0 0"
-                        material="metalness: 0.8; roughness: 0.2"
-                        shadow="cast: true; receive: true"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-            </a-entity>
+        <!-- SIMPLE CAMERA SYSTEM: Camera directly follows player -->
+        <a-entity id="player" position="0 0.06 0">
+            <a-gltf-model 
+                id="player-model-instance" 
+                src="#player-model"
+                scale="0.003 0.003 0.003"
+                animation-mixer>
+            </a-gltf-model>
             
-            <!-- Camera with smooth follow -->
-            <a-entity id="camera-rig" position="0 0.3 0.6">
-                <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true"></a-camera>
+            <!-- Gun placed at approximate hand position (will be adjusted by JS) -->
+            <a-entity id="gun" position="0.3 0.3 0.3" rotation="0 90 0" scale="0.0025 0.0025 0.0025">
+                <a-gltf-model src="#gun-model" visible="false" id="gun-model-instance"></a-gltf-model>
             </a-entity>
         </a-entity>
+
+        <!-- Camera positioned relative to player -->
+        <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.3 0.6"></a-camera>
         
         <!-- Lighting -->
         <a-light type="ambient" intensity="0.6"></a-light>
-        <a-light type="directional" position="2 5 3" intensity="1.5" castshadow="true" shadow-mapSize-width="2048" shadow-mapSize-height="2048"></a-light>
-        <a-light type="point" position="0 3 0" intensity="0.8" color="#4a9eff"></a-light>
+        <a-light type="directional" position="2 5 3" intensity="1.5" castshadow="true"></a-light>
         
         <!-- Ground -->
-        <a-plane id="ground" rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40; roughness: 0.8; metalness: 0.1" receive-shadow></a-plane>
-        <a-grid position="0 0.01 0" width="200" height="200" cell-size="1" material="color: #4a9eff; opacity: 0.2"></a-grid>
+        <a-plane rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40" receive-shadow></a-plane>
         
-        <!-- Environment Objects -->
-        
-        <!-- Giant Mushrooms -->
-        <a-entity position="-15 0.1 -20">
-            <a-cylinder radius="0.4" height="0.8" color="#8B4513" shadow></a-cylinder>
-            <a-sphere position="0 0.6 0" radius="0.6" color="#FF6B6B" shadow></a-sphere>
-        </a-entity>
-        
-        <a-entity position="20 0.1 -15">
-            <a-cylinder radius="0.5" height="1.0" color="#8B4513" shadow></a-cylinder>
-            <a-sphere position="0 0.7 0" radius="0.7" color="#4ECDC4" shadow></a-sphere>
-        </a-entity>
-        
-        <!-- Tiny House -->
-        <a-entity position="-25 0.2 -30">
-            <a-box width="3" height="0.4" depth="3" color="#A0522D" shadow></a-box>
-            <a-box position="0 0.8 0" width="2.5" height="1.2" depth="2.5" color="#DEB887" shadow></a-box>
-            <a-cone position="0 1.6 0" radius-bottom="1.5" radius-top="0" height="1.2" color="#8B4513" shadow></a-cone>
-        </a-entity>
-        
-        <!-- Crystals -->
-        <a-entity position="30 0.1 20">
-            <a-cylinder radius="0.3" height="1.5" color="#FF69B4" shadow></a-cylinder>
-            <a-cone position="0 1.0 0" radius-bottom="0.4" radius-top="0" height="0.8" color="#FF1493" shadow></a-cone>
-        </a-entity>
-        
-        <!-- Pond -->
-        <a-circle position="10 0.05 40" rotation="-90 0 0" radius="3" color="#4a9eff" material="opacity: 0.6; transparent: true"></a-circle>
-        
-        <!-- Floating particles (optimized) -->
-        <a-entity id="particles" position="0 0 0">
-            <!-- Particles will be added via JS -->
-        </a-entity>
+        <!-- Simple objects -->
+        <a-box position="2 0.5 2" width="1" height="1" depth="1" color="#FF6B6B" shadow></a-box>
+        <a-box position="-2 0.5 -2" width="1" height="1" depth="1" color="#4ECDC4" shadow></a-box>
+        <a-cylinder position="3 0.5 -3" radius="0.5" height="1" color="#FFE66D" shadow></a-cylinder>
     </a-scene>
     
     <script>
+        // SIMPLIFIED VERSION - NO COMPLEX COMPONENTS
         (function() {
-            'use strict';
+            console.log('Starting Mini World Explorer...');
             
-            // ============== CONFIGURATION ==============
-            const CONFIG = {
-                PLAYER_SCALE: 0.0030,
-                PLAYER_HEIGHT: 0.06,
-                WALK_SPEED: 0.02,
-                RUN_SPEED: 0.035,
-                JUMP_HEIGHT: 0.08,
-                JUMP_DURATION: 500,
-                CAMERA_SMOOTHING: 0.08,
-                CAMERA_OFFSET: { x: 0, y: 0.3, z: 0.6 },
-                
-                // Bone names to try (common patterns)
-                BONE_NAMES: [
-                    'mixamorigRightHand',  // Most common
-                    'RightHand',
-                    'hand_r',
-                    'RightHandIndex1',
-                    'Bip001 R Hand',
-                    'R_Hand',
-                    'hand_R',
-                    'maximorigRightHand'    // Your specific bone name
-                ]
-            };
+            // Get elements
+            const loadingScreen = document.getElementById('loading-screen');
+            const loadingStatus = document.getElementById('loading-status');
+            const animStatus = document.getElementById('anim-status');
+            const posX = document.getElementById('pos-x');
+            const posZ = document.getElementById('pos-z');
+            const errorMsg = document.getElementById('error-message');
             
-            // ============== STATE ==============
-            const State = {
-                joystickActive: false,
-                joystickVector: { x: 0, y: 0 },
-                isJumping: false,
-                currentAnimation: 'idle',
-                lastMovementTime: Date.now(),
-                modelsLoaded: { player: false, gun: false },
-                loadingProgress: 0
-            };
+            // State
+            let joystickActive = false;
+            let joystickX = 0;
+            let joystickY = 0;
+            let isJumping = false;
+            let playerY = 0.06;
             
-            // ============== DOM ELEMENTS ==============
-            const DOM = {
-                loadingScreen: document.getElementById('loading-screen'),
-                loadingStatus: document.getElementById('loading-status'),
-                progressFill: document.getElementById('progress-fill'),
-                posX: document.getElementById('pos-x'),
-                posY: document.getElementById('pos-y'),
-                posZ: document.getElementById('pos-z'),
-                animStatus: document.getElementById('anim-status'),
-                moveJoystick: document.getElementById('move-joystick'),
-                joystickHandle: document.getElementById('joystick-handle'),
-                jumpBtn: document.getElementById('jump-btn'),
-                shootBtn: document.getElementById('shoot-btn'),
-                grenadeBtn: document.getElementById('grenade-btn')
-            };
+            // Movement speed
+            const MOVE_SPEED = 0.02;
             
-            // ============== ADVANCED BONE CONSTRAINT COMPONENT ==============
-            AFRAME.registerComponent('bone-attach', {
-                schema: {
-                    target: { type: 'selector' },
-                    boneNames: { type: 'array', default: CONFIG.BONE_NAMES },
-                    offset: { type: 'vec3', default: { x: 0.01, y: 0.01, z: 0.005 } },
-                    rotation: { type: 'vec3', default: { x: 0, y: 90, z: 0 } }
-                },
-                
-                init: function() {
-                    this.bone = null;
-                    this.targetModel = this.data.target;
-                    this.originalParent = this.el.object3D.parent;
-                    this.retryCount = 0;
-                    
-                    if (!this.targetModel) {
-                        console.error('Bone attach: target not found');
-                        return;
-                    }
-                    
-                    // Try to attach immediately if model already loaded
-                    this.attemptAttach();
-                    
-                    // Listen for model load
-                    this.targetModel.addEventListener('model-loaded', () => {
-                        setTimeout(() => this.attemptAttach(), 500);
-                    });
-                    
-                    // Also check periodically
-                    this.attachInterval = setInterval(() => this.attemptAttach(), 1000);
-                },
-                
-                attemptAttach: function() {
-                    if (this.bone) {
-                        clearInterval(this.attachInterval);
-                        return;
-                    }
-                    
-                    this.retryCount++;
-                    if (this.retryCount > 20) { // Stop after 20 seconds
-                        clearInterval(this.attachInterval);
-                        console.warn('Bone attach: giving up, using fallback position');
-                        this.useFallbackPosition();
-                        return;
-                    }
-                    
-                    const model = this.targetModel.getObject3D('mesh');
-                    if (!model) return;
-                    
-                    // Try each bone name
-                    for (const boneName of this.data.boneNames) {
-                        let found = false;
-                        model.traverse((node) => {
-                            if (node.isBone && node.name.toLowerCase().includes(boneName.toLowerCase())) {
-                                console.log('✅ Found bone:', node.name);
-                                this.bone = node;
-                                this.attachToBone();
-                                found = true;
-                                clearInterval(this.attachInterval);
-                                return;
-                            }
-                        });
-                        if (found) break;
-                    }
-                    
-                    // If no bone found after 5 attempts, use fallback
-                    if (!this.bone && this.retryCount > 5) {
-                        this.useFallbackPosition();
-                    }
-                },
-                
-                attachToBone: function() {
-                    if (!this.bone) return;
-                    
-                    // Remove from original parent
-                    if (this.originalParent) {
-                        this.originalParent.remove(this.el.object3D);
-                    }
-                    
-                    // Add to bone
-                    this.bone.add(this.el.object3D);
-                    
-                    // Apply offset and rotation
-                    this.el.object3D.position.set(
-                        this.data.offset.x,
-                        this.data.offset.y,
-                        this.data.offset.z
-                    );
-                    
-                    this.el.object3D.rotation.set(
-                        THREE.MathUtils.degToRad(this.data.rotation.x),
-                        THREE.MathUtils.degToRad(this.data.rotation.y),
-                        THREE.MathUtils.degToRad(this.data.rotation.z)
-                    );
-                    
-                    // Make gun visible
-                    this.el.setAttribute('visible', 'true');
-                    
-                    // Update debug info
-                    document.getElementById('debug-info').innerHTML = '✅ Gun attached to hand bone';
-                },
-                
-                useFallbackPosition: function() {
-                    console.log('Using fallback gun position');
-                    this.el.setAttribute('position', '0.3 0.3 0.3');
-                    this.el.setAttribute('rotation', '0 90 0');
-                    this.el.setAttribute('visible', 'true');
-                    document.getElementById('debug-info').innerHTML = '⚠️ Gun at fallback position';
-                },
-                
-                tick: function() {
-                    if (this.bone) {
-                        this.bone.updateMatrixWorld(true);
-                    }
-                }
+            // Get A-Frame elements
+            const scene = document.querySelector('a-scene');
+            const player = document.getElementById('player');
+            const camera = document.getElementById('camera');
+            const playerModel = document.getElementById('player-model-instance');
+            const gun = document.getElementById('gun');
+            const gunModel = document.getElementById('gun-model-instance');
+            
+            // Simple joystick setup
+            const moveJoystick = document.getElementById('move-joystick');
+            const joystickHandle = document.getElementById('joystick-handle');
+            
+            moveJoystick.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                joystickActive = true;
+                updateJoystick(e.touches[0]);
             });
             
-            // ============== CAMERA FOLLOW COMPONENT ==============
-            AFRAME.registerComponent('smooth-follow', {
-                schema: {
-                    target: { type: 'selector' },
-                    offset: { type: 'vec3', default: CONFIG.CAMERA_OFFSET },
-                    smoothness: { default: CONFIG.CAMERA_SMOOTHING }
-                },
-                
-                init: function() {
-                    this.targetPos = new THREE.Vector3();
-                    this.cameraPos = new THREE.Vector3();
-                },
-                
-                tick: function() {
-                    if (!this.data.target) return;
-                    
-                    // Get target world position
-                    this.targetPos.setFromMatrixPosition(this.data.target.object3D.matrixWorld);
-                    
-                    // Calculate desired camera position
-                    this.targetPos.x += this.data.offset.x;
-                    this.targetPos.y += this.data.offset.y;
-                    this.targetPos.z += this.data.offset.z;
-                    
-                    // Smooth interpolation
-                    this.cameraPos.copy(this.el.object3D.position);
-                    this.cameraPos.lerp(this.targetPos, this.data.smoothness);
-                    this.el.object3D.position.copy(this.cameraPos);
-                    
-                    // Look at target
-                    this.el.object3D.lookAt(this.data.target.object3D.position);
-                }
+            moveJoystick.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (joystickActive) updateJoystick(e.touches[0]);
             });
             
-            // ============== UPDATE LOADING PROGRESS ==============
-            function updateLoadingProgress(message, increment) {
-                State.loadingProgress = Math.min(State.loadingProgress + (increment || 10), 90);
-                if (DOM.progressFill) {
-                    DOM.progressFill.style.width = State.loadingProgress + '%';
-                }
-                if (DOM.loadingStatus) {
-                    DOM.loadingStatus.textContent = message;
-                }
-            }
-            
-            // ============== SETUP MODEL LOADING ==============
-            function setupModelLoading() {
-                const playerModel = document.getElementById('player-model-instance');
-                const gunModel = document.getElementById('gun-model-instance');
-                
-                if (playerModel) {
-                    playerModel.addEventListener('model-loaded', () => {
-                        console.log('✅ Player model loaded');
-                        State.modelsLoaded.player = true;
-                        updateLoadingProgress('✓ Player model loaded', 40);
-                        checkAllLoaded();
-                        
-                        // List available bones for debugging
-                        const model = playerModel.getObject3D('mesh');
-                        if (model) {
-                            console.log('Available bones:');
-                            model.traverse((node) => {
-                                if (node.isBone) {
-                                    console.log(' -', node.name);
-                                }
-                            });
-                        }
-                    });
-                    
-                    playerModel.addEventListener('error', (e) => {
-                        console.error('❌ Player model failed to load', e);
-                        updateLoadingProgress('⚠️ Using fallback model', 40);
-                        State.modelsLoaded.player = true; // Continue anyway
-                        checkAllLoaded();
-                    });
-                }
-                
-                if (gunModel) {
-                    gunModel.addEventListener('model-loaded', () => {
-                        console.log('✅ Gun model loaded');
-                        State.modelsLoaded.gun = true;
-                        updateLoadingProgress('✓ Gun model loaded', 40);
-                        checkAllLoaded();
-                    });
-                    
-                    gunModel.addEventListener('error', (e) => {
-                        console.error('❌ Gun model failed to load', e);
-                        updateLoadingProgress('⚠️ Using fallback gun', 40);
-                        State.modelsLoaded.gun = true; // Continue anyway
-                        checkAllLoaded();
-                    });
-                }
-            }
-            
-            function checkAllLoaded() {
-                if (State.modelsLoaded.player && State.modelsLoaded.gun) {
-                    updateLoadingProgress('✨ World ready!', 10);
-                    
-                    // Attach gun to player hand
-                    const gunHolder = document.getElementById('gun-holder');
-                    const playerModel = document.getElementById('player-model-instance');
-                    
-                    if (gunHolder && playerModel) {
-                        gunHolder.setAttribute('bone-attach', {
-                            target: '#player-model-instance'
-                        });
-                    }
-                    
-                    setTimeout(() => {
-                        if (DOM.loadingScreen) {
-                            DOM.loadingScreen.style.opacity = '0';
-                            setTimeout(() => {
-                                DOM.loadingScreen.style.display = 'none';
-                            }, 500);
-                        }
-                    }, 1000);
-                    
-                    // Create floating particles
-                    createParticles();
-                }
-            }
-            
-            // ============== CREATE FLOATING PARTICLES ==============
-            function createParticles() {
-                const particlesEl = document.getElementById('particles');
-                if (!particlesEl) return;
-                
-                for (let i = 0; i < 10; i++) {
-                    const particle = document.createElement('a-sphere');
-                    particle.setAttribute('radius', '0.05');
-                    particle.setAttribute('color', `hsl(${200 + Math.random() * 100}, 80%, 70%)`);
-                    particle.setAttribute('position', {
-                        x: (Math.random() - 0.5) * 40,
-                        y: Math.random() * 5,
-                        z: (Math.random() - 0.5) * 40
-                    });
-                    particle.setAttribute('animation', {
-                        property: 'position',
-                        to: `${(Math.random() - 0.5) * 40} ${Math.random() * 5} ${(Math.random() - 0.5) * 40}`,
-                        dur: 5000 + Math.random() * 5000,
-                        easing: 'linear',
-                        loop: true
-                    });
-                    particle.setAttribute('material', 'transparent: true; opacity: 0.3');
-                    particlesEl.appendChild(particle);
-                }
-            }
-            
-            // ============== JOYSTICK SETUP ==============
-            function setupJoystick() {
-                if (!DOM.moveJoystick || !DOM.joystickHandle) return;
-                
-                DOM.moveJoystick.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    State.joystickActive = true;
-                    State.lastMovementTime = Date.now();
-                    updateJoystick(e.touches[0]);
-                });
-                
-                DOM.moveJoystick.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    if (State.joystickActive) {
-                        State.lastMovementTime = Date.now();
-                        updateJoystick(e.touches[0]);
-                    }
-                });
-                
-                DOM.moveJoystick.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    State.joystickActive = false;
-                    State.joystickVector = { x: 0, y: 0 };
-                    DOM.joystickHandle.style.transform = 'translate(0px, 0px)';
-                    State.lastMovementTime = Date.now();
-                });
-            }
+            moveJoystick.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                joystickActive = false;
+                joystickX = 0;
+                joystickY = 0;
+                joystickHandle.style.transform = 'translate(0px, 0px)';
+                if (animStatus && !isJumping) animStatus.textContent = 'IDLE';
+            });
             
             function updateJoystick(touch) {
-                const rect = DOM.moveJoystick.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
+                const rect = moveJoystick.getBoundingClientRect();
+                const centerX = rect.left + rect.width/2;
+                const centerY = rect.top + rect.height/2;
                 
                 let deltaX = touch.clientX - centerX;
                 let deltaY = touch.clientY - centerY;
                 
                 const maxDistance = 40;
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const distance = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
                 
                 if (distance > maxDistance) {
-                    deltaX = (deltaX / distance) * maxDistance;
-                    deltaY = (deltaY / distance) * maxDistance;
+                    deltaX = (deltaX/distance) * maxDistance;
+                    deltaY = (deltaY/distance) * maxDistance;
                 }
                 
-                DOM.joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                joystickX = deltaX / maxDistance;
+                joystickY = deltaY / maxDistance;
                 
-                State.joystickVector.x = deltaX / maxDistance;
-                State.joystickVector.y = deltaY / maxDistance;
+                if (animStatus && !isJumping) {
+                    animStatus.textContent = Math.abs(joystickX) > 0.7 || Math.abs(joystickY) > 0.7 ? 'RUNNING' : 'WALKING';
+                }
             }
             
-            // ============== ANIMATION CONTROL ==============
-            function setAnimation(animName) {
-                const playerModel = document.getElementById('player-model-instance');
-                if (!playerModel) return;
+            // Action buttons
+            document.getElementById('jump-btn').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!isJumping) {
+                    isJumping = true;
+                    animStatus.textContent = 'JUMP';
+                    playerY = 0.06;
+                    
+                    // Simple jump animation
+                    let jumpTime = 0;
+                    const jumpInterval = setInterval(() => {
+                        jumpTime += 50;
+                        const progress = jumpTime / 400; // 400ms jump
+                        
+                        if (progress >= 1) {
+                            clearInterval(jumpInterval);
+                            player.setAttribute('position', {x: player.getAttribute('position').x, y: 0.06, z: player.getAttribute('position').z});
+                            isJumping = false;
+                            if (!joystickActive) animStatus.textContent = 'IDLE';
+                        } else {
+                            const jumpY = 0.06 + Math.sin(progress * Math.PI) * 0.08;
+                            player.setAttribute('position', {x: player.getAttribute('position').x, y: jumpY, z: player.getAttribute('position').z});
+                        }
+                    }, 50);
+                }
+            });
+            
+            document.getElementById('shoot-btn').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                animStatus.textContent = 'SHOOT';
                 
-                // Update UI
-                let displayName = animName.toUpperCase();
-                if (animName === 'idle') displayName = 'IDLE';
-                else if (animName.includes('run')) displayName = '🏃 RUN';
-                else if (animName.includes('walk')) displayName = '🚶 WALK';
-                else if (animName.includes('shoot')) displayName = '🔫 SHOOT';
-                else if (animName === 'jump') displayName = '🦘 JUMP';
-                else if (animName === 'throw-grenade') displayName = '💣 GRENADE';
-                
-                if (DOM.animStatus) {
-                    DOM.animStatus.textContent = displayName;
+                // Muzzle flash
+                if (gunModel) {
+                    gunModel.setAttribute('material', 'emissive', '#FF5500');
+                    gunModel.setAttribute('material', 'emissiveIntensity', '2.0');
+                    gunModel.setAttribute('visible', 'true');
+                    
+                    setTimeout(() => {
+                        gunModel.setAttribute('material', 'emissive', '#000000');
+                        gunModel.setAttribute('material', 'emissiveIntensity', '0');
+                    }, 100);
                 }
                 
-                State.currentAnimation = animName;
-                
-                // Set animation
-                playerModel.setAttribute('animation-mixer', {
-                    clip: animName,
-                    loop: (animName === 'jump' || animName.includes('shoot') || animName === 'throw-grenade') ? 'once' : 'repeat',
-                    crossFadeDuration: 0.2
+                setTimeout(() => {
+                    if (!joystickActive && !isJumping) animStatus.textContent = 'IDLE';
+                }, 500);
+            });
+            
+            document.getElementById('grenade-btn').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                animStatus.textContent = 'GRENADE';
+                setTimeout(() => {
+                    if (!joystickActive && !isJumping) animStatus.textContent = 'IDLE';
+                }, 800);
+            });
+            
+            // Handle model loading
+            let modelsLoaded = 0;
+            
+            if (playerModel) {
+                playerModel.addEventListener('model-loaded', () => {
+                    console.log('✅ Player model loaded');
+                    modelsLoaded++;
+                    loadingStatus.textContent = '✓ Player loaded, loading gun...';
+                    
+                    // Make gun visible after player loads
+                    setTimeout(() => {
+                        if (gunModel) gunModel.setAttribute('visible', 'true');
+                    }, 500);
+                    
+                    checkAllLoaded();
                 });
                 
-                // Handle one-shot animations
-                if (animName === 'jump' || animName.includes('shoot') || animName === 'throw-grenade') {
+                playerModel.addEventListener('error', (e) => {
+                    console.error('Player model error:', e);
+                    loadingStatus.textContent = '⚠️ Using simple player';
+                    modelsLoaded++;
+                    checkAllLoaded();
+                });
+            }
+            
+            if (gunModel) {
+                gunModel.addEventListener('model-loaded', () => {
+                    console.log('✅ Gun model loaded');
+                    modelsLoaded++;
+                    loadingStatus.textContent = '✓ Gun loaded';
+                    checkAllLoaded();
+                });
+                
+                gunModel.addEventListener('error', (e) => {
+                    console.error('Gun model error:', e);
+                    loadingStatus.textContent = '⚠️ Using simple gun';
+                    
+                    // Create simple gun as fallback
+                    const simpleGun = document.createElement('a-box');
+                    simpleGun.setAttribute('width', '0.2');
+                    simpleGun.setAttribute('height', '0.1');
+                    simpleGun.setAttribute('depth', '0.4');
+                    simpleGun.setAttribute('color', '#333');
+                    simpleGun.setAttribute('position', '0 0 0');
+                    gun.appendChild(simpleGun);
+                    
+                    modelsLoaded++;
+                    checkAllLoaded();
+                });
+            }
+            
+            function checkAllLoaded() {
+                if (modelsLoaded >= 2) {
+                    loadingStatus.textContent = '✨ World ready!';
+                    
+                    // Try to attach gun to hand bone
                     setTimeout(() => {
-                        if (!State.joystickActive && !State.isJumping) {
-                            setAnimation('idle');
-                        } else if (State.joystickActive && !State.isJumping) {
-                            updateMovementAnimation();
+                        try {
+                            const model = playerModel.getObject3D('mesh');
+                            if (model) {
+                                console.log('Searching for hand bone...');
+                                model.traverse((node) => {
+                                    if (node.isBone && node.name.toLowerCase().includes('hand')) {
+                                        console.log('Found hand bone:', node.name);
+                                        // Reparent gun to bone
+                                        const gunObj = gun.object3D;
+                                        const parent = gunObj.parent;
+                                        if (parent) parent.remove(gunObj);
+                                        node.add(gunObj);
+                                        gunObj.position.set(0.01, 0.01, 0.005);
+                                        gunObj.rotation.set(0, Math.PI/2, 0);
+                                    }
+                                });
+                            }
+                        } catch(e) {
+                            console.log('Could not attach to bone, using default position');
                         }
-                    }, 600);
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                        }, 500);
+                    }, 1000);
                 }
             }
             
-            function updateMovementAnimation() {
-                if (State.isJumping) return;
+            // SIMPLE CAMERA FOLLOW - Direct update every frame
+            function updateCamera() {
+                if (!player || !camera) return;
                 
-                const timeSinceLastMove = Date.now() - State.lastMovementTime;
+                const playerPos = player.getAttribute('position');
                 
-                if (!State.joystickActive || timeSinceLastMove > 100) {
-                    if (State.currentAnimation !== 'idle') {
-                        setAnimation('idle');
-                    }
-                    return;
-                }
+                // Camera follows player position exactly
+                camera.setAttribute('position', {
+                    x: playerPos.x,
+                    y: playerPos.y + 0.3,
+                    z: playerPos.z + 0.6
+                });
                 
-                const magnitude = Math.sqrt(State.joystickVector.x * State.joystickVector.x + 
-                                           State.joystickVector.y * State.joystickVector.y);
-                const isRunning = magnitude > 0.7;
-                
-                if (Math.abs(State.joystickVector.x) > Math.abs(State.joystickVector.y)) {
-                    // Strafe
-                    setAnimation(State.joystickVector.x > 0 ? 
-                        (isRunning ? 'run-right' : 'walk-right') : 
-                        (isRunning ? 'run-left' : 'walk-left'));
-                } else {
-                    // Forward/backward
-                    setAnimation(State.joystickVector.y > 0 ? 
-                        (isRunning ? 'run-forward' : 'walk-forward') : 
-                        (isRunning ? 'run-backwards' : 'walk-backwards'));
-                }
+                // Update HUD
+                if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
+                if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
             }
             
-            // ============== MOVEMENT ==============
+            // MOVEMENT - Direct position update
             function movePlayer() {
-                if (!State.joystickActive || State.isJumping) return;
+                if (!joystickActive || isJumping || !player || !camera) return;
                 
-                const cameraRig = document.getElementById('camera-rig');
-                const player = document.getElementById('player');
-                if (!cameraRig || !player) return;
-                
-                const pos = player.getAttribute('position');
-                const cameraRot = document.getElementById('camera').getAttribute('rotation');
+                const playerPos = player.getAttribute('position');
+                const cameraRot = camera.getAttribute('rotation');
                 
                 const radY = THREE.MathUtils.degToRad(cameraRot.y);
-                const magnitude = Math.sqrt(State.joystickVector.x * State.joystickVector.x + 
-                                           State.joystickVector.y * State.joystickVector.y);
-                const speed = magnitude > 0.7 ? CONFIG.RUN_SPEED : CONFIG.WALK_SPEED;
                 
-                // Forward/backward
-                if (State.joystickVector.y !== 0) {
-                    pos.x += Math.sin(radY) * State.joystickVector.y * speed * -1;
-                    pos.z += Math.cos(radY) * State.joystickVector.y * speed * -1;
+                // Forward/back
+                if (joystickY !== 0) {
+                    playerPos.x += Math.sin(radY) * joystickY * MOVE_SPEED * -1;
+                    playerPos.z += Math.cos(radY) * joystickY * MOVE_SPEED * -1;
                 }
                 
                 // Strafe
-                if (State.joystickVector.x !== 0) {
-                    pos.x += Math.sin(radY + Math.PI/2) * State.joystickVector.x * speed;
-                    pos.z += Math.cos(radY + Math.PI/2) * State.joystickVector.x * speed;
+                if (joystickX !== 0) {
+                    playerPos.x += Math.sin(radY + Math.PI/2) * joystickX * MOVE_SPEED;
+                    playerPos.z += Math.cos(radY + Math.PI/2) * joystickX * MOVE_SPEED;
                 }
                 
                 // Keep in bounds
-                pos.x = Math.max(-90, Math.min(90, pos.x));
-                pos.z = Math.max(-90, Math.min(90, pos.z));
+                playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
+                playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
                 
-                player.setAttribute('position', pos);
-                
-                // Update HUD
-                DOM.posX.textContent = Math.round(pos.x * 10) / 10;
-                DOM.posY.textContent = Math.round(pos.y * 100) / 100;
-                DOM.posZ.textContent = Math.round(pos.z * 10) / 10;
+                player.setAttribute('position', playerPos);
             }
             
-            // ============== JUMP ==============
-            function jump() {
-                if (State.isJumping) return;
-                
-                const player = document.getElementById('player');
-                if (!player) return;
-                
-                State.isJumping = true;
-                setAnimation('jump');
-                
-                const startY = player.getAttribute('position').y;
-                const jumpStart = Date.now();
-                
-                function animateJump() {
-                    const elapsed = Date.now() - jumpStart;
-                    const progress = Math.min(elapsed / CONFIG.JUMP_DURATION, 1);
-                    
-                    if (progress >= 1) {
-                        const pos = player.getAttribute('position');
-                        pos.y = CONFIG.PLAYER_HEIGHT;
-                        player.setAttribute('position', pos);
-                        State.isJumping = false;
-                        updateMovementAnimation();
-                        return;
-                    }
-                    
-                    const jumpProgress = Math.sin(progress * Math.PI);
-                    const pos = player.getAttribute('position');
-                    pos.y = startY + (CONFIG.JUMP_HEIGHT * jumpProgress);
-                    player.setAttribute('position', pos);
-                    
-                    requestAnimationFrame(animateJump);
-                }
-                
-                animateJump();
-            }
-            
-            // ============== SHOOT ==============
-            function shoot() {
-                if (State.isJumping) return;
-                setAnimation('shoot-rifle');
-                
-                // Muzzle flash
-                const gun = document.getElementById('gun-model-instance');
-                if (gun) {
-                    gun.setAttribute('material', 'emissive', '#FF5500');
-                    gun.setAttribute('material', 'emissiveIntensity', '2.0');
-                    
-                    setTimeout(() => {
-                        gun.setAttribute('material', 'emissive', '#000000');
-                        gun.setAttribute('material', 'emissiveIntensity', '0');
-                    }, 100);
-                }
-            }
-            
-            // ============== GRENADE ==============
-            function throwGrenade() {
-                if (State.isJumping) return;
-                setAnimation('throw-grenade');
-            }
-            
-            // ============== SETUP BUTTONS ==============
-            function setupButtons() {
-                DOM.jumpBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    jump();
-                });
-                
-                DOM.shootBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    shoot();
-                });
-                
-                DOM.grenadeBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    throwGrenade();
-                });
-                
-                // Keyboard fallback
-                window.addEventListener('keydown', (e) => {
-                    switch(e.key) {
-                        case ' ': e.preventDefault(); jump(); break;
-                        case 'f': e.preventDefault(); shoot(); break;
-                        case 'g': e.preventDefault(); throwGrenade(); break;
-                    }
-                });
-            }
-            
-            // ============== GAME LOOP ==============
+            // Simple animation loop
             function gameLoop() {
                 movePlayer();
-                updateMovementAnimation();
+                updateCamera();
                 requestAnimationFrame(gameLoop);
             }
             
-            // ============== INITIALIZATION ==============
-            function init() {
-                console.log('🎮 Mini World Explorer starting...');
-                updateLoadingProgress('Loading Player.glb...', 0);
+            // Start when scene loads
+            scene.addEventListener('loaded', () => {
+                console.log('Scene loaded, starting game loop');
+                gameLoop();
                 
-                setupModelLoading();
-                setupJoystick();
-                setupButtons();
-                
-                // Setup camera follow
-                const cameraRig = document.getElementById('camera-rig');
-                const player = document.getElementById('player');
-                
-                if (cameraRig && player) {
-                    cameraRig.setAttribute('smooth-follow', {
-                        target: '#player',
-                        offset: CONFIG.CAMERA_OFFSET,
-                        smoothness: CONFIG.CAMERA_SMOOTHING
-                    });
-                }
-                
-                // Start game loop
-                setTimeout(gameLoop, 1000);
-            }
+                // Set initial idle animation
+                setTimeout(() => {
+                    if (animStatus) animStatus.textContent = 'IDLE';
+                }, 500);
+            });
             
-            // Start when ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
+            // Fallback in case scene loaded event already fired
+            setTimeout(() => {
+                if (!loadingScreen.style.display) {
+                    console.log('Force starting...');
+                    gameLoop();
+                }
+            }, 3000);
+            
+            // Error handler
+            window.addEventListener('error', (e) => {
+                console.error('Global error:', e.error);
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = 'Error: ' + e.error.message;
+                loadingStatus.textContent = '⚠️ Error - Check console';
+            });
         })();
     </script>
 </body>
