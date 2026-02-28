@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Hold for Rapid Fire</title>
+    <title>Mini World Explorer - All Buttons with Hold</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -130,7 +130,7 @@
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>with Rapid Fire Support</h3>
+            <h3>All Buttons with Hold Support</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
@@ -142,7 +142,7 @@
     </div>
     
     <div id="anim-status">IDLE</div>
-    <div id="controls-hint">👆 Tap for single | Hold for rapid</div>
+    <div id="controls-hint">👆 Tap for single | Hold for continuous</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
 
     <div id="touch-controls">
@@ -192,7 +192,7 @@
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with rapid fire...');
+            console.log('Starting Mini World Explorer with all buttons holdable...');
             
             // ===== ANIMATION MAPPING =====
             const ANIMATIONS = {
@@ -230,11 +230,14 @@
             let joystickActive = false;
             let joystickX = 0;
             let joystickY = 0;
-            let isJumping = false;
             
             // Button hold states
+            let jumpActive = false;
             let shootingActive = false;
             let grenadeActive = false;
+            
+            // Intervals
+            let jumpInterval = null;
             let shootInterval = null;
             let grenadeInterval = null;
             
@@ -244,6 +247,8 @@
             
             // Rapid fire settings
             const RAPID_FIRE_DELAY = 100; // ms between shots when holding
+            const JUMP_DELAY = 400; // ms between jumps when holding
+            const GRENADE_DELAY = 300; // ms between grenades when holding
             
             // ===== A-Frame Elements =====
             const scene = document.querySelector('a-scene');
@@ -292,11 +297,9 @@
                 }
             }
             
-            // ===== Action Functions =====
+            // ===== Jump Function with Hold Support =====
             function performJump() {
-                if (isJumping) return;
-                
-                isJumping = true;
+                if (!player) return;
                 
                 // Play jump animation (one-shot)
                 setSafeAnimation(ANIMATIONS.JUMP, 'once');
@@ -315,20 +318,6 @@
                         const pos = player.getAttribute('position');
                         pos.y = 0.06;
                         player.setAttribute('position', pos);
-                        
-                        // Jump complete
-                        isJumping = false;
-                        
-                        // Return to appropriate animation
-                        if (shootingActive) {
-                            setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
-                        } else if (grenadeActive) {
-                            setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
-                        } else if (joystickActive) {
-                            updateMovementAnimation();
-                        } else {
-                            setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                        }
                         return;
                     }
                     
@@ -343,8 +332,47 @@
                 animateJump();
             }
             
+            function startJumping() {
+                if (jumpActive) return;
+                
+                jumpActive = true;
+                jumpBtn.classList.add('holding');
+                
+                // Perform first jump immediately
+                performJump();
+                
+                // Set up interval for continuous jumping
+                jumpInterval = setInterval(() => {
+                    if (jumpActive) {
+                        performJump();
+                    }
+                }, JUMP_DELAY);
+            }
+            
+            function stopJumping() {
+                jumpActive = false;
+                jumpBtn.classList.remove('holding');
+                
+                if (jumpInterval) {
+                    clearInterval(jumpInterval);
+                    jumpInterval = null;
+                }
+                
+                // Return to appropriate animation
+                if (shootingActive) {
+                    setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
+                } else if (grenadeActive) {
+                    setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
+                } else if (joystickActive) {
+                    updateMovementAnimation();
+                } else {
+                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
+                }
+            }
+            
+            // ===== Shoot Functions =====
             function startShooting() {
-                if (isJumping) return;
+                if (shootingActive) return;
                 
                 shootingActive = true;
                 shootBtn.classList.add('holding');
@@ -357,7 +385,6 @@
                 
                 // Start muzzle flash effect
                 if (gunModel) {
-                    // Flash on interval for rapid fire effect
                     shootInterval = setInterval(() => {
                         if (!shootingActive) return;
                         
@@ -391,19 +418,20 @@
                 }
                 
                 // Return to appropriate animation
-                if (!isJumping) {
-                    if (grenadeActive) {
-                        setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
-                    } else if (joystickActive) {
-                        updateMovementAnimation();
-                    } else {
-                        setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                    }
+                if (jumpActive) {
+                    setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
+                } else if (grenadeActive) {
+                    setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
+                } else if (joystickActive) {
+                    updateMovementAnimation();
+                } else {
+                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                 }
             }
             
+            // ===== Grenade Functions =====
             function startGrenade() {
-                if (isJumping) return;
+                if (grenadeActive) return;
                 
                 grenadeActive = true;
                 grenadeBtn.classList.add('holding');
@@ -411,11 +439,10 @@
                 // Play grenade animation continuously
                 setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
                 
-                // Visual feedback
+                // Visual effect for grenade holding
                 grenadeInterval = setInterval(() => {
                     if (!grenadeActive) return;
                     
-                    // Subtle visual effect for grenade holding
                     gunModel?.setAttribute('material', 'emissive', '#9f7aea');
                     gunModel?.setAttribute('material', 'emissiveIntensity', '1.0');
                     
@@ -425,7 +452,7 @@
                             gunModel?.setAttribute('material', 'emissiveIntensity', '0');
                         }
                     }, 50);
-                }, 300);
+                }, GRENADE_DELAY);
             }
             
             function stopGrenade() {
@@ -444,19 +471,20 @@
                 }
                 
                 // Return to appropriate animation
-                if (!isJumping) {
-                    if (shootingActive) {
-                        setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
-                    } else if (joystickActive) {
-                        updateMovementAnimation();
-                    } else {
-                        setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                    }
+                if (jumpActive) {
+                    setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
+                } else if (shootingActive) {
+                    setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
+                } else if (joystickActive) {
+                    updateMovementAnimation();
+                } else {
+                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                 }
             }
             
+            // ===== Movement Animation =====
             function updateMovementAnimation() {
-                if (isJumping || shootingActive || grenadeActive) return;
+                if (jumpActive || shootingActive || grenadeActive) return;
                 
                 if (!joystickActive) {
                     setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
@@ -513,7 +541,7 @@
                 joystickHandle.style.transform = 'translate(0px, 0px)';
                 
                 // Only change animation if not doing actions
-                if (!isJumping && !shootingActive && !grenadeActive) {
+                if (!jumpActive && !shootingActive && !grenadeActive) {
                     setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                 }
             });
@@ -539,20 +567,30 @@
                 joystickY = deltaY / maxDistance;
                 
                 // Update movement animation if not doing actions
-                if (!isJumping && !shootingActive && !grenadeActive) {
+                if (!jumpActive && !shootingActive && !grenadeActive) {
                     updateMovementAnimation();
                 }
             }
             
             // ===== Button Setup with Hold Detection =====
             
-            // Jump button (single tap only, no hold)
+            // Jump button with hold
             jumpBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                performJump();
+                startJumping();
             });
             
-            // Shoot button with hold for rapid fire
+            jumpBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                stopJumping();
+            });
+            
+            jumpBtn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                stopJumping();
+            });
+            
+            // Shoot button with hold
             shootBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 startShooting();
@@ -585,6 +623,20 @@
             });
             
             // Mouse fallback for testing
+            jumpBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startJumping();
+            });
+            
+            jumpBtn.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                stopJumping();
+            });
+            
+            jumpBtn.addEventListener('mouseleave', (e) => {
+                stopJumping();
+            });
+            
             shootBtn.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 startShooting();
@@ -616,7 +668,10 @@
             // Keyboard fallback
             window.addEventListener('keydown', (e) => {
                 switch(e.key) {
-                    case ' ': e.preventDefault(); performJump(); break;
+                    case ' ': 
+                        e.preventDefault(); 
+                        if (!jumpActive) startJumping();
+                        break;
                     case 'f': 
                     case 'F': 
                         e.preventDefault(); 
@@ -632,6 +687,9 @@
             
             window.addEventListener('keyup', (e) => {
                 switch(e.key) {
+                    case ' ':
+                        stopJumping();
+                        break;
                     case 'f':
                     case 'F':
                         stopShooting();
@@ -645,7 +703,7 @@
             
             // ===== Movement =====
             function movePlayer() {
-                if (!joystickActive || isJumping || !player || !camera) return;
+                if (!joystickActive || !player || !camera) return;
                 
                 const playerPos = player.getAttribute('position');
                 const cameraRot = camera.getAttribute('rotation');
