@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Third Person View</title>
+    <title>Mini World Explorer - Fixed Third Person View</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -125,8 +125,8 @@
             display: none;
         }
         
-        #camera-hint {
-            position: fixed; top: 20px; right: 20px;
+        #debug-info {
+            position: fixed; top: 80px; right: 20px;
             color: #4a9eff; background: rgba(30, 30, 50, 0.8);
             padding: 8px 15px; border-radius: 20px;
             font-size: 12px; border: 1px solid #4a9eff;
@@ -138,7 +138,7 @@
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>Third Person View</h3>
+            <h3>Fixed Third Person View</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
@@ -152,7 +152,7 @@
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
-    <div id="camera-hint">📷 Third Person View</div>
+    <div id="debug-info">Camera: Following Player</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -173,10 +173,10 @@
             <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg">
         </a-assets>
 
-        <!-- Player Character - This entity will be rotated to face movement direction -->
-        <a-entity id="player" position="0 0.06 0">
-            <!-- Player Model Container (will be rotated by look-at component) -->
-            <a-entity id="player-model-container" position="0 0 0">
+        <!-- Player Character - Separate position and rotation containers -->
+        <a-entity id="player-position" position="0 0.06 0">
+            <!-- This container handles rotation independently -->
+            <a-entity id="player-rotation" position="0 0 0">
                 <a-gltf-model 
                     id="player-model-instance" 
                     src="#player-model"
@@ -191,26 +191,32 @@
             </a-entity>
         </a-entity>
 
-        <!-- Camera positioned BEHIND the player (third person view) -->
-        <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: false" position="0 0.3 -0.8"></a-camera>
+        <!-- Camera positioned BEHIND the player at a distance -->
+        <a-entity id="camera-rig" position="0 0.5 2.5">
+            <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true"></a-camera>
+        </a-entity>
         
         <!-- Lighting -->
         <a-light type="ambient" intensity="0.6"></a-light>
         <a-light type="directional" position="2 5 3" intensity="1.5" castshadow="true"></a-light>
+        <a-light type="point" position="0 2 2" intensity="0.8" color="#FFFFFF"></a-light>
         
         <!-- Ground -->
-        <a-plane rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40" receive-shadow></a-plane>
+        <a-plane rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40; roughness: 0.8" receive-shadow></a-plane>
         
-        <!-- Simple environment objects -->
+        <!-- Simple environment objects (scaled for tiny player) -->
         <a-box position="5 0.5 5" width="1" height="1" depth="1" color="#FF6B6B" shadow></a-box>
         <a-box position="-5 0.5 -5" width="1" height="1" depth="1" color="#4ECDC4" shadow></a-box>
         <a-cylinder position="3 0.5 -3" radius="0.5" height="1" color="#FFE66D" shadow></a-cylinder>
         <a-sphere position="-3 0.5 3" radius="0.5" color="#9f7aea" shadow></a-sphere>
+        
+        <!-- Add a reference grid to help see scale -->
+        <a-grid position="0 0.01 0" width="20" height="20" cell-size="1" material="color: #888; opacity: 0.3"></a-grid>
     </a-scene>
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with Third Person View...');
+            console.log('Starting Mini World Explorer with Fixed Third Person View...');
             
             // ===== ANIMATION MAPPING =====
             const ANIMATIONS = {
@@ -236,6 +242,7 @@
             const loadingStatus = document.getElementById('loading-status');
             const animStatus = document.getElementById('anim-status');
             const rapidIndicator = document.getElementById('rapid-indicator');
+            const debugInfo = document.getElementById('debug-info');
             const posX = document.getElementById('pos-x');
             const posZ = document.getElementById('pos-z');
             
@@ -260,8 +267,8 @@
             let grenadeInterval = null;
             
             // Movement speed
-            const WALK_SPEED = 0.015;
-            const RUN_SPEED = 0.025;
+            const WALK_SPEED = 0.02;
+            const RUN_SPEED = 0.035;
             
             // Rapid fire settings
             const RAPID_FIRE_DELAY = 100;
@@ -270,8 +277,9 @@
             
             // ===== A-Frame Elements =====
             const scene = document.querySelector('a-scene');
-            const player = document.getElementById('player');
-            const playerModelContainer = document.getElementById('player-model-container');
+            const playerPosition = document.getElementById('player-position');
+            const playerRotation = document.getElementById('player-rotation');
+            const cameraRig = document.getElementById('camera-rig');
             const camera = document.getElementById('camera');
             const playerModel = document.getElementById('player-model-instance');
             const gun = document.getElementById('gun');
@@ -318,13 +326,13 @@
             
             // ===== Jump Function =====
             function performJump() {
-                if (!player) return;
+                if (!playerPosition) return;
                 
                 // Play jump animation (one-shot)
                 setSafeAnimation(ANIMATIONS.JUMP, 'once');
                 
                 // Jump physics
-                const startY = player.getAttribute('position').y;
+                const startY = playerPosition.getAttribute('position').y;
                 const jumpStart = Date.now();
                 const JUMP_DURATION = 500;
                 const JUMP_HEIGHT = 0.08;
@@ -334,16 +342,16 @@
                     const progress = Math.min(elapsed / JUMP_DURATION, 1);
                     
                     if (progress >= 1) {
-                        const pos = player.getAttribute('position');
+                        const pos = playerPosition.getAttribute('position');
                         pos.y = 0.06;
-                        player.setAttribute('position', pos);
+                        playerPosition.setAttribute('position', pos);
                         return;
                     }
                     
                     const jumpProgress = Math.sin(progress * Math.PI);
-                    const pos = player.getAttribute('position');
+                    const pos = playerPosition.getAttribute('position');
                     pos.y = startY + (JUMP_HEIGHT * jumpProgress);
-                    player.setAttribute('position', pos);
+                    playerPosition.setAttribute('position', pos);
                     
                     requestAnimationFrame(animateJump);
                 }
@@ -716,28 +724,28 @@
                 }
             });
             
-            // ===== MOVEMENT AND ROTATION SYSTEM =====
-            function moveAndRotatePlayer() {
-                if (!joystickActive || !player || !camera || !playerModelContainer) return;
+            // ===== MOVEMENT SYSTEM =====
+            function movePlayer() {
+                if (!joystickActive || !playerPosition || !camera) return;
                 
-                const playerPos = player.getAttribute('position');
+                const playerPos = playerPosition.getAttribute('position');
                 const cameraRot = camera.getAttribute('rotation');
                 
                 const radY = THREE.MathUtils.degToRad(cameraRot.y);
                 const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
                 const speed = magnitude > 0.7 ? RUN_SPEED : WALK_SPEED;
                 
-                // Calculate movement direction
+                // Calculate movement relative to camera
                 let moveX = 0;
                 let moveZ = 0;
                 
-                // Forward/back relative to camera
+                // Forward/back (joystick Y)
                 if (joystickY !== 0) {
-                    moveX += Math.sin(radY) * joystickY * speed * -1;
-                    moveZ += Math.cos(radY) * joystickY * speed * -1;
+                    moveX += Math.sin(radY) * joystickY * speed;
+                    moveZ += Math.cos(radY) * joystickY * speed;
                 }
                 
-                // Strafe
+                // Strafe (joystick X)
                 if (joystickX !== 0) {
                     moveX += Math.sin(radY + Math.PI/2) * joystickX * speed;
                     moveZ += Math.cos(radY + Math.PI/2) * joystickX * speed;
@@ -751,32 +759,17 @@
                 playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
                 playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
                 
-                player.setAttribute('position', playerPos);
+                playerPosition.setAttribute('position', playerPos);
                 
-                // Calculate rotation angle based on movement direction
+                // Rotate player to face movement direction
                 if (moveX !== 0 || moveZ !== 0) {
-                    // Calculate the angle the player should face (direction of movement)
                     const targetAngle = Math.atan2(moveX, moveZ);
+                    const targetDeg = THREE.MathUtils.radToDeg(targetAngle);
                     
-                    // Convert to degrees and set rotation (rotate 180 degrees to face camera)
-                    // Add 180 degrees (PI radians) to make player face away from camera
-                    let rotationY = THREE.MathUtils.radToDeg(targetAngle) + 180;
-                    
-                    // Smooth rotation (optional - you can remove the lerp for instant rotation)
-                    const currentRot = playerModelContainer.getAttribute('rotation') || {x: 0, y: 0, z: 0};
-                    const currentY = currentRot.y;
-                    
-                    // Find shortest rotation direction
-                    let diff = rotationY - currentY;
-                    if (diff > 180) diff -= 360;
-                    if (diff < -180) diff += 360;
-                    
-                    // Apply smooth rotation (0.15 = smoothness factor)
-                    const newY = currentY + diff * 0.15;
-                    
-                    playerModelContainer.setAttribute('rotation', {
+                    // Apply rotation to player rotation container
+                    playerRotation.setAttribute('rotation', {
                         x: 0,
-                        y: newY,
+                        y: targetDeg,
                         z: 0
                     });
                 }
@@ -784,26 +777,28 @@
                 // Update HUD
                 if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
                 if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
+                
+                // Update debug info
+                debugInfo.innerHTML = `Camera: Following<br>Player Y: ${playerPos.y.toFixed(2)}`;
             }
             
-            // ===== Camera Follow (Third Person) =====
+            // ===== CAMERA FOLLOW (Third Person) =====
             function updateCamera() {
-                if (!player || !camera) return;
+                if (!playerPosition || !cameraRig) return;
                 
-                const playerPos = player.getAttribute('position');
+                const playerPos = playerPosition.getAttribute('position');
                 
-                // Camera positioned BEHIND the player
-                // Z is negative to be behind, Y is above, X follows player
-                camera.setAttribute('position', {
+                // Position camera rig at player position + offset
+                // This keeps camera relative to player
+                cameraRig.setAttribute('position', {
                     x: playerPos.x,
-                    y: playerPos.y + 0.3,  // Height above player
-                    z: playerPos.z - 0.8    // Distance behind player (negative Z = behind)
+                    y: playerPos.y + 0.5,  // Height above player
+                    z: playerPos.z + 2.5    // Distance behind player (positive Z = behind)
                 });
                 
-                // Make camera look at the player (so player is centered)
-                // This ensures the player is always in view
-                const cameraObj = camera.object3D;
-                const playerObj = player.object3D;
+                // Make camera look at player (slightly above to show whole body)
+                const cameraObj = camera?.object3D;
+                const playerObj = playerRotation?.object3D;
                 
                 if (cameraObj && playerObj) {
                     cameraObj.lookAt(playerObj.position);
@@ -818,6 +813,11 @@
                     console.log('✅ Player model loaded');
                     modelsLoaded++;
                     loadingStatus.textContent = '✓ Player loaded, loading gun...';
+                    
+                    // Make player visible by setting a default rotation
+                    if (playerRotation) {
+                        playerRotation.setAttribute('rotation', {x: 0, y: 0, z: 0});
+                    }
                     
                     // Blacklist any t-pose animations
                     setTimeout(() => {
@@ -890,7 +890,7 @@
             
             // ===== Game Loop =====
             function gameLoop() {
-                moveAndRotatePlayer();
+                movePlayer();
                 updateCamera();
                 requestAnimationFrame(gameLoop);
             }
@@ -902,4 +902,4 @@
         })();
     </script>
 </body>
-</html>
+                    </html>
