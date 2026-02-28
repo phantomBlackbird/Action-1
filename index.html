@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - All Buttons with Hold</title>
+    <title>Mini World Explorer - Third Person View</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -124,13 +124,21 @@
             font-size: 12px; border: 1px solid #ffaa00;
             display: none;
         }
+        
+        #camera-hint {
+            position: fixed; top: 20px; right: 20px;
+            color: #4a9eff; background: rgba(30, 30, 50, 0.8);
+            padding: 8px 15px; border-radius: 20px;
+            font-size: 12px; border: 1px solid #4a9eff;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>All Buttons with Hold Support</h3>
+            <h3>Third Person View</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
@@ -142,8 +150,9 @@
     </div>
     
     <div id="anim-status">IDLE</div>
-    <div id="controls-hint">👆 Tap for single | Hold for continuous</div>
+    <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
+    <div id="camera-hint">📷 Third Person View</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -164,23 +173,26 @@
             <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg">
         </a-assets>
 
-        <!-- Player Character -->
+        <!-- Player Character - This entity will be rotated to face movement direction -->
         <a-entity id="player" position="0 0.06 0">
-            <a-gltf-model 
-                id="player-model-instance" 
-                src="#player-model"
-                scale="0.003 0.003 0.003"
-                animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1">
-            </a-gltf-model>
-            
-            <!-- Gun -->
-            <a-entity id="gun" position="0.3 0.3 0.3" rotation="0 90 0" scale="0.0025 0.0025 0.0025">
-                <a-gltf-model id="gun-model-instance" src="#gun-model"></a-gltf-model>
+            <!-- Player Model Container (will be rotated by look-at component) -->
+            <a-entity id="player-model-container" position="0 0 0">
+                <a-gltf-model 
+                    id="player-model-instance" 
+                    src="#player-model"
+                    scale="0.003 0.003 0.003"
+                    animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1">
+                </a-gltf-model>
+                
+                <!-- Gun attached to player -->
+                <a-entity id="gun" position="0.3 0.3 0.3" rotation="0 90 0" scale="0.0025 0.0025 0.0025">
+                    <a-gltf-model id="gun-model-instance" src="#gun-model"></a-gltf-model>
+                </a-entity>
             </a-entity>
         </a-entity>
 
-        <!-- Camera -->
-        <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 0.3 0.6"></a-camera>
+        <!-- Camera positioned BEHIND the player (third person view) -->
+        <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: false" position="0 0.3 -0.8"></a-camera>
         
         <!-- Lighting -->
         <a-light type="ambient" intensity="0.6"></a-light>
@@ -188,11 +200,17 @@
         
         <!-- Ground -->
         <a-plane rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40" receive-shadow></a-plane>
+        
+        <!-- Simple environment objects -->
+        <a-box position="5 0.5 5" width="1" height="1" depth="1" color="#FF6B6B" shadow></a-box>
+        <a-box position="-5 0.5 -5" width="1" height="1" depth="1" color="#4ECDC4" shadow></a-box>
+        <a-cylinder position="3 0.5 -3" radius="0.5" height="1" color="#FFE66D" shadow></a-cylinder>
+        <a-sphere position="-3 0.5 3" radius="0.5" color="#9f7aea" shadow></a-sphere>
     </a-scene>
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with all buttons holdable...');
+            console.log('Starting Mini World Explorer with Third Person View...');
             
             // ===== ANIMATION MAPPING =====
             const ANIMATIONS = {
@@ -246,13 +264,14 @@
             const RUN_SPEED = 0.025;
             
             // Rapid fire settings
-            const RAPID_FIRE_DELAY = 100; // ms between shots when holding
-            const JUMP_DELAY = 400; // ms between jumps when holding
-            const GRENADE_DELAY = 300; // ms between grenades when holding
+            const RAPID_FIRE_DELAY = 100;
+            const JUMP_DELAY = 400;
+            const GRENADE_DELAY = 300;
             
             // ===== A-Frame Elements =====
             const scene = document.querySelector('a-scene');
             const player = document.getElementById('player');
+            const playerModelContainer = document.getElementById('player-model-container');
             const camera = document.getElementById('camera');
             const playerModel = document.getElementById('player-model-instance');
             const gun = document.getElementById('gun');
@@ -297,7 +316,7 @@
                 }
             }
             
-            // ===== Jump Function with Hold Support =====
+            // ===== Jump Function =====
             function performJump() {
                 if (!player) return;
                 
@@ -500,7 +519,7 @@
                 
                 const isRunning = magnitude > 0.7;
                 
-                // Determine direction
+                // Determine direction based on joystick input
                 if (Math.abs(joystickX) > Math.abs(joystickY)) {
                     // Strafe
                     if (joystickX > 0) {
@@ -572,9 +591,7 @@
                 }
             }
             
-            // ===== Button Setup with Hold Detection =====
-            
-            // Jump button with hold
+            // ===== Button Setup =====
             jumpBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 startJumping();
@@ -590,7 +607,6 @@
                 stopJumping();
             });
             
-            // Shoot button with hold
             shootBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 startShooting();
@@ -606,7 +622,6 @@
                 stopShooting();
             });
             
-            // Grenade button with hold
             grenadeBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 startGrenade();
@@ -701,9 +716,9 @@
                 }
             });
             
-            // ===== Movement =====
-            function movePlayer() {
-                if (!joystickActive || !player || !camera) return;
+            // ===== MOVEMENT AND ROTATION SYSTEM =====
+            function moveAndRotatePlayer() {
+                if (!joystickActive || !player || !camera || !playerModelContainer) return;
                 
                 const playerPos = player.getAttribute('position');
                 const cameraRot = camera.getAttribute('rotation');
@@ -712,17 +727,25 @@
                 const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
                 const speed = magnitude > 0.7 ? RUN_SPEED : WALK_SPEED;
                 
-                // Forward/back
+                // Calculate movement direction
+                let moveX = 0;
+                let moveZ = 0;
+                
+                // Forward/back relative to camera
                 if (joystickY !== 0) {
-                    playerPos.x += Math.sin(radY) * joystickY * speed * -1;
-                    playerPos.z += Math.cos(radY) * joystickY * speed * -1;
+                    moveX += Math.sin(radY) * joystickY * speed * -1;
+                    moveZ += Math.cos(radY) * joystickY * speed * -1;
                 }
                 
                 // Strafe
                 if (joystickX !== 0) {
-                    playerPos.x += Math.sin(radY + Math.PI/2) * joystickX * speed;
-                    playerPos.z += Math.cos(radY + Math.PI/2) * joystickX * speed;
+                    moveX += Math.sin(radY + Math.PI/2) * joystickX * speed;
+                    moveZ += Math.cos(radY + Math.PI/2) * joystickX * speed;
                 }
+                
+                // Apply movement
+                playerPos.x += moveX;
+                playerPos.z += moveZ;
                 
                 // Keep in bounds
                 playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
@@ -730,22 +753,61 @@
                 
                 player.setAttribute('position', playerPos);
                 
+                // Calculate rotation angle based on movement direction
+                if (moveX !== 0 || moveZ !== 0) {
+                    // Calculate the angle the player should face (direction of movement)
+                    const targetAngle = Math.atan2(moveX, moveZ);
+                    
+                    // Convert to degrees and set rotation (rotate 180 degrees to face camera)
+                    // Add 180 degrees (PI radians) to make player face away from camera
+                    let rotationY = THREE.MathUtils.radToDeg(targetAngle) + 180;
+                    
+                    // Smooth rotation (optional - you can remove the lerp for instant rotation)
+                    const currentRot = playerModelContainer.getAttribute('rotation') || {x: 0, y: 0, z: 0};
+                    const currentY = currentRot.y;
+                    
+                    // Find shortest rotation direction
+                    let diff = rotationY - currentY;
+                    if (diff > 180) diff -= 360;
+                    if (diff < -180) diff += 360;
+                    
+                    // Apply smooth rotation (0.15 = smoothness factor)
+                    const newY = currentY + diff * 0.15;
+                    
+                    playerModelContainer.setAttribute('rotation', {
+                        x: 0,
+                        y: newY,
+                        z: 0
+                    });
+                }
+                
                 // Update HUD
                 if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
                 if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
             }
             
-            // ===== Camera Follow =====
+            // ===== Camera Follow (Third Person) =====
             function updateCamera() {
                 if (!player || !camera) return;
                 
                 const playerPos = player.getAttribute('position');
                 
+                // Camera positioned BEHIND the player
+                // Z is negative to be behind, Y is above, X follows player
                 camera.setAttribute('position', {
                     x: playerPos.x,
-                    y: playerPos.y + 0.3,
-                    z: playerPos.z + 0.6
+                    y: playerPos.y + 0.3,  // Height above player
+                    z: playerPos.z - 0.8    // Distance behind player (negative Z = behind)
                 });
+                
+                // Make camera look at the player (so player is centered)
+                // This ensures the player is always in view
+                const cameraObj = camera.object3D;
+                const playerObj = player.object3D;
+                
+                if (cameraObj && playerObj) {
+                    cameraObj.lookAt(playerObj.position);
+                }
             }
             
             // ===== Model Loading =====
@@ -828,7 +890,7 @@
             
             // ===== Game Loop =====
             function gameLoop() {
-                movePlayer();
+                moveAndRotatePlayer();
                 updateCamera();
                 requestAnimationFrame(gameLoop);
             }
