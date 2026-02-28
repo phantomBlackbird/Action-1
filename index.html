@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Fixed Third Person View</title>
+    <title>Mini World Explorer - Larger Player</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -96,6 +96,7 @@
         }
         
         #hud .title { font-size: 24px; font-weight: bold; color: #4a9eff; }
+        #hud .size { color: #88ff88; }
         
         #anim-status {
             position: fixed; bottom: 200px; left: 50%;
@@ -138,7 +139,7 @@
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>Fixed Third Person View</h3>
+            <h3>Player Size: 3x Larger</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
@@ -146,13 +147,14 @@
 
     <div id="hud">
         <div class="title">⚔️ MINI EXPLORER</div>
+        <div class="size">Size: <span style="color: #88ff88;">3x (0.009 scale)</span></div>
         <div>X: <span id="pos-x">0.0</span> Z: <span id="pos-z">0.0</span></div>
     </div>
     
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
-    <div id="debug-info">Camera: Following Player</div>
+    <div id="debug-info">Player Size: 3x larger</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -173,50 +175,61 @@
             <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg">
         </a-assets>
 
-        <!-- Player Character - Separate position and rotation containers -->
-        <a-entity id="player-position" position="0 0.06 0">
+        <!-- Player Character - 3x Larger -->
+        <a-entity id="player-position" position="0 0.18 0">  <!-- Height increased 3x (0.06 -> 0.18) -->
             <!-- This container handles rotation independently -->
             <a-entity id="player-rotation" position="0 0 0">
                 <a-gltf-model 
                     id="player-model-instance" 
                     src="#player-model"
-                    scale="0.003 0.003 0.003"
+                    scale="0.009 0.009 0.009"  <!-- Scale increased 3x (0.003 -> 0.009) -->
                     animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1">
                 </a-gltf-model>
                 
-                <!-- Gun attached to player -->
-                <a-entity id="gun" position="0.3 0.3 0.3" rotation="0 90 0" scale="0.0025 0.0025 0.0025">
+                <!-- Gun attached to player - scaled up 3x and position adjusted -->
+                <a-entity id="gun" position="0.9 0.9 0.9" rotation="0 90 0" scale="0.0075 0.0075 0.0075">  <!-- Scale 3x, position 3x -->
                     <a-gltf-model id="gun-model-instance" src="#gun-model"></a-gltf-model>
                 </a-entity>
             </a-entity>
         </a-entity>
 
-        <!-- Camera positioned BEHIND the player at a distance -->
-        <a-entity id="camera-rig" position="0 0.5 2.5">
+        <!-- Camera positioned BEHIND the player - adjusted for larger size -->
+        <a-entity id="camera-rig" position="0 1.5 5.0">  <!-- Height increased (0.5 -> 1.5), distance increased (2.5 -> 5.0) -->
             <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true"></a-camera>
         </a-entity>
         
         <!-- Lighting -->
         <a-light type="ambient" intensity="0.6"></a-light>
         <a-light type="directional" position="2 5 3" intensity="1.5" castshadow="true"></a-light>
-        <a-light type="point" position="0 2 2" intensity="0.8" color="#FFFFFF"></a-light>
+        <a-light type="point" position="0 3 5" intensity="1.2" color="#FFFFFF"></a-light>
         
-        <!-- Ground -->
-        <a-plane rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 40 40; roughness: 0.8" receive-shadow></a-plane>
+        <!-- Ground - increased texture repeat to maintain scale appearance -->
+        <a-plane rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 20 20; roughness: 0.8" receive-shadow></a-plane>
         
-        <!-- Simple environment objects (scaled for tiny player) -->
-        <a-box position="5 0.5 5" width="1" height="1" depth="1" color="#FF6B6B" shadow></a-box>
-        <a-box position="-5 0.5 -5" width="1" height="1" depth="1" color="#4ECDC4" shadow></a-box>
-        <a-cylinder position="3 0.5 -3" radius="0.5" height="1" color="#FFE66D" shadow></a-cylinder>
-        <a-sphere position="-3 0.5 3" radius="0.5" color="#9f7aea" shadow></a-sphere>
+        <!-- Environment objects - scaled up to match larger player -->
+        <a-box position="15 1.5 15" width="3" height="3" depth="3" color="#FF6B6B" shadow></a-box>
+        <a-box position="-15 1.5 -15" width="3" height="3" depth="3" color="#4ECDC4" shadow></a-box>
+        <a-cylinder position="9 1.5 -9" radius="1.5" height="3" color="#FFE66D" shadow></a-cylinder>
+        <a-sphere position="-9 1.5 9" radius="1.5" color="#9f7aea" shadow></a-sphere>
         
-        <!-- Add a reference grid to help see scale -->
-        <a-grid position="0 0.01 0" width="20" height="20" cell-size="1" material="color: #888; opacity: 0.3"></a-grid>
+        <!-- Add trees scaled up -->
+        <a-entity position="-20 0 -20">
+            <a-cylinder radius="0.6" height="6" color="#8B4513" shadow></a-cylinder>
+            <a-sphere position="0 3.6 0" radius="1.8" color="#2ECC71" shadow></a-sphere>
+        </a-entity>
+        
+        <a-entity position="20 0 20">
+            <a-cylinder radius="0.6" height="6" color="#8B4513" shadow></a-cylinder>
+            <a-sphere position="0 3.6 0" radius="1.8" color="#2ECC71" shadow></a-sphere>
+        </a-entity>
+        
+        <!-- Reference grid - scaled to match -->
+        <a-grid position="0 0.01 0" width="60" height="60" cell-size="3" material="color: #888; opacity: 0.3"></a-grid>
     </a-scene>
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with Fixed Third Person View...');
+            console.log('Starting Mini World Explorer with 3x Larger Player...');
             
             // ===== ANIMATION MAPPING =====
             const ANIMATIONS = {
@@ -266,14 +279,18 @@
             let shootInterval = null;
             let grenadeInterval = null;
             
-            // Movement speed
-            const WALK_SPEED = 0.02;
-            const RUN_SPEED = 0.035;
+            // Movement speed - increased for larger player
+            const WALK_SPEED = 0.06;  // Increased 3x (0.02 -> 0.06)
+            const RUN_SPEED = 0.105;   // Increased 3x (0.035 -> 0.105)
             
             // Rapid fire settings
             const RAPID_FIRE_DELAY = 100;
             const JUMP_DELAY = 400;
             const GRENADE_DELAY = 300;
+            
+            // Jump settings - increased for larger player
+            const JUMP_HEIGHT = 0.24;  // Increased 3x (0.08 -> 0.24)
+            const GROUND_LEVEL = 0.18;  // Increased 3x (0.06 -> 0.18)
             
             // ===== A-Frame Elements =====
             const scene = document.querySelector('a-scene');
@@ -335,7 +352,6 @@
                 const startY = playerPosition.getAttribute('position').y;
                 const jumpStart = Date.now();
                 const JUMP_DURATION = 500;
-                const JUMP_HEIGHT = 0.08;
                 
                 function animateJump() {
                     const elapsed = Date.now() - jumpStart;
@@ -343,7 +359,7 @@
                     
                     if (progress >= 1) {
                         const pos = playerPosition.getAttribute('position');
-                        pos.y = 0.06;
+                        pos.y = GROUND_LEVEL;
                         playerPosition.setAttribute('position', pos);
                         return;
                     }
@@ -779,7 +795,7 @@
                 if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
                 
                 // Update debug info
-                debugInfo.innerHTML = `Camera: Following<br>Player Y: ${playerPos.y.toFixed(2)}`;
+                debugInfo.innerHTML = `Player Size: 3x<br>Y: ${playerPos.y.toFixed(2)}`;
             }
             
             // ===== CAMERA FOLLOW (Third Person) =====
@@ -789,14 +805,13 @@
                 const playerPos = playerPosition.getAttribute('position');
                 
                 // Position camera rig at player position + offset
-                // This keeps camera relative to player
                 cameraRig.setAttribute('position', {
                     x: playerPos.x,
-                    y: playerPos.y + 0.5,  // Height above player
-                    z: playerPos.z + 2.5    // Distance behind player (positive Z = behind)
+                    y: playerPos.y + 1.5,  // Height above player (3x)
+                    z: playerPos.z + 5.0    // Distance behind player (3x)
                 });
                 
-                // Make camera look at player (slightly above to show whole body)
+                // Make camera look at player
                 const cameraObj = camera?.object3D;
                 const playerObj = playerRotation?.object3D;
                 
@@ -902,4 +917,4 @@
         })();
     </script>
 </body>
-                    </html>
+    </html>
