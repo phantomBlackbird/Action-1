@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Fixed Action Buttons</title>
+    <title>Mini World Explorer - Fixed Infinite Actions</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -180,9 +180,10 @@
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with fixed action buttons...');
+            console.log('Starting Mini World Explorer with infinite action fix...');
             
             // ===== ANIMATION MAPPING =====
+            // Explicitly exclude t-pose from being used
             const ANIMATIONS = {
                 IDLE: 'idle',
                 RUN_FORWARD: 'run-forward',
@@ -198,12 +199,8 @@
                 THROW_GRENADE: 'throw-grenade'
             };
             
-            // Animation durations
-            const ANIMATION_DURATIONS = {
-                [ANIMATIONS.JUMP]: 500,
-                [ANIMATIONS.SHOOT_RIFLE]: 600,
-                [ANIMATIONS.THROW_GRENADE]: 800
-            };
+            // Blacklist - animations we NEVER want to play automatically
+            const BLACKLIST_ANIMATIONS = ['t-pose'];
             
             // ===== DOM Elements =====
             const loadingScreen = document.getElementById('loading-screen');
@@ -217,9 +214,10 @@
             let joystickX = 0;
             let joystickY = 0;
             let isJumping = false;
-            let isPlayingAction = false;
+            
+            // Track which action is currently playing
             let currentAction = null;
-            let actionTimer = null;
+            let actionStartTime = 0;
             
             // Movement speed
             const WALK_SPEED = 0.015;
@@ -233,20 +231,14 @@
             const gun = document.getElementById('gun');
             const gunModel = document.getElementById('gun-model-instance');
             
-            // ===== Animation Control =====
-            function setAnimation(animName, isAction = false) {
+            // ===== Safe Animation Function =====
+            function setSafeAnimation(animName, loopType = 'repeat') {
                 if (!playerModel) return;
                 
-                // Clear any pending action timer
-                if (actionTimer) {
-                    clearTimeout(actionTimer);
-                    actionTimer = null;
-                }
-                
-                // Update state
-                if (isAction) {
-                    isPlayingAction = true;
-                    currentAction = animName;
+                // NEVER play blacklisted animations
+                if (BLACKLIST_ANIMATIONS.includes(animName)) {
+                    console.warn('Blocked attempt to play blacklisted animation:', animName);
+                    animName = ANIMATIONS.IDLE;
                 }
                 
                 // Update UI
@@ -264,105 +256,40 @@
                 try {
                     playerModel.setAttribute('animation-mixer', {
                         clip: animName,
-                        loop: isAction ? 'once' : 'repeat',
+                        loop: loopType,
                         crossFadeDuration: 0.1,
                         timeScale: 1.0
                     });
                     
-                    console.log('Playing animation:', animName);
+                    console.log('Playing animation:', animName, 'loop:', loopType);
                 } catch (e) {
-                    console.warn('Could not play animation:', animName);
-                }
-                
-                // If action animation, set timer to return to appropriate state
-                if (isAction) {
-                    const duration = ANIMATION_DURATIONS[animName] || 500;
-                    
-                    actionTimer = setTimeout(() => {
-                        // Action complete
-                        isPlayingAction = false;
-                        currentAction = null;
-                        
-                        // Return to appropriate animation
-                        if (isJumping && animName === ANIMATIONS.JUMP) {
-                            // Jump will handle its own completion
-                            return;
-                        }
-                        
-                        if (joystickActive) {
-                            updateMovementAnimation();
-                        } else {
-                            setAnimation(ANIMATIONS.IDLE);
-                        }
-                        
-                        actionTimer = null;
-                    }, duration);
-                }
-            }
-            
-            function updateMovementAnimation() {
-                // Don't interrupt action animations
-                if (isPlayingAction || isJumping) return;
-                
-                if (!joystickActive) {
-                    setAnimation(ANIMATIONS.IDLE);
-                    return;
-                }
-                
-                const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
-                
-                if (magnitude < 0.1) {
-                    setAnimation(ANIMATIONS.IDLE);
-                    return;
-                }
-                
-                const isRunning = magnitude > 0.7;
-                
-                // Determine direction
-                if (Math.abs(joystickX) > Math.abs(joystickY)) {
-                    // Strafe
-                    if (joystickX > 0) {
-                        setAnimation(isRunning ? ANIMATIONS.RUN_RIGHT : ANIMATIONS.WALK_RIGHT);
-                    } else {
-                        setAnimation(isRunning ? ANIMATIONS.RUN_LEFT : ANIMATIONS.WALK_LEFT);
-                    }
-                } else {
-                    // Forward/backward
-                    if (joystickY > 0) {
-                        setAnimation(isRunning ? ANIMATIONS.RUN_FORWARD : ANIMATIONS.WALK_FORWARD);
-                    } else {
-                        setAnimation(isRunning ? ANIMATIONS.RUN_BACKWARDS : ANIMATIONS.WALK_BACKWARDS);
-                    }
+                    console.warn('Could not play animation:', animName, '- using idle instead');
+                    // Fallback to idle
+                    playerModel.setAttribute('animation-mixer', {
+                        clip: ANIMATIONS.IDLE,
+                        loop: 'repeat',
+                        crossFadeDuration: 0.1
+                    });
                 }
             }
             
             // ===== Action Functions =====
             function performJump() {
-                // Allow jump even during other actions
                 if (isJumping) return;
                 
-                // Cancel any pending action timer
-                if (actionTimer) {
-                    clearTimeout(actionTimer);
-                    actionTimer = null;
-                }
-                
                 isJumping = true;
-                isPlayingAction = true;
                 currentAction = ANIMATIONS.JUMP;
+                actionStartTime = Date.now();
                 
-                // Play jump animation
-                setAnimation(ANIMATIONS.JUMP, true);
+                // Play jump animation (one-shot)
+                setSafeAnimation(ANIMATIONS.JUMP, 'once');
                 
                 // Jump physics
                 const startY = player.getAttribute('position').y;
-                const jumpStart = Date.now();
-                const JUMP_DURATION = 500;
-                const JUMP_HEIGHT = 0.08;
                 
                 function animateJump() {
-                    const elapsed = Date.now() - jumpStart;
-                    const progress = Math.min(elapsed / JUMP_DURATION, 1);
+                    const elapsed = Date.now() - actionStartTime;
+                    const progress = Math.min(elapsed / 500, 1); // 500ms jump
                     
                     if (progress >= 1) {
                         const pos = player.getAttribute('position');
@@ -371,21 +298,20 @@
                         
                         // Jump complete
                         isJumping = false;
-                        isPlayingAction = false;
                         currentAction = null;
                         
                         // Return to appropriate animation
                         if (joystickActive) {
                             updateMovementAnimation();
                         } else {
-                            setAnimation(ANIMATIONS.IDLE);
+                            setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                         }
                         return;
                     }
                     
                     const jumpProgress = Math.sin(progress * Math.PI);
                     const pos = player.getAttribute('position');
-                    pos.y = startY + (JUMP_HEIGHT * jumpProgress);
+                    pos.y = startY + (0.08 * jumpProgress);
                     player.setAttribute('position', pos);
                     
                     requestAnimationFrame(animateJump);
@@ -396,16 +322,13 @@
             
             function performShoot() {
                 // Don't interrupt jump, but can interrupt other actions
-                if (isJumping) return;
-                
-                // Cancel any pending action timer
-                if (actionTimer) {
-                    clearTimeout(actionTimer);
-                    actionTimer = null;
+                if (isJumping) {
+                    // Queue the shoot for after jump? For now, just return
+                    return;
                 }
                 
-                // Play shoot animation
-                setAnimation(ANIMATIONS.SHOOT_RIFLE, true);
+                // Play shoot animation (one-shot)
+                setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'once');
                 
                 // Muzzle flash
                 if (gunModel) {
@@ -417,20 +340,68 @@
                         gunModel.setAttribute('material', 'emissiveIntensity', '0');
                     }, 100);
                 }
+                
+                // Set a timer to return to appropriate animation
+                setTimeout(() => {
+                    if (!isJumping && !joystickActive) {
+                        setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
+                    } else if (!isJumping && joystickActive) {
+                        updateMovementAnimation();
+                    }
+                }, 600); // Match shoot animation duration
             }
             
             function performGrenade() {
-                // Don't interrupt jump, but can interrupt other actions
+                // Don't interrupt jump
                 if (isJumping) return;
                 
-                // Cancel any pending action timer
-                if (actionTimer) {
-                    clearTimeout(actionTimer);
-                    actionTimer = null;
+                // Play grenade animation (one-shot)
+                setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'once');
+                
+                // Set a timer to return to appropriate animation
+                setTimeout(() => {
+                    if (!isJumping && !joystickActive) {
+                        setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
+                    } else if (!isJumping && joystickActive) {
+                        updateMovementAnimation();
+                    }
+                }, 800); // Match grenade animation duration
+            }
+            
+            function updateMovementAnimation() {
+                // Don't interrupt jump
+                if (isJumping) return;
+                
+                if (!joystickActive) {
+                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
+                    return;
                 }
                 
-                // Play grenade animation
-                setAnimation(ANIMATIONS.THROW_GRENADE, true);
+                const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
+                
+                if (magnitude < 0.1) {
+                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
+                    return;
+                }
+                
+                const isRunning = magnitude > 0.7;
+                
+                // Determine direction
+                if (Math.abs(joystickX) > Math.abs(joystickY)) {
+                    // Strafe
+                    if (joystickX > 0) {
+                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_RIGHT : ANIMATIONS.WALK_RIGHT, 'repeat');
+                    } else {
+                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_LEFT : ANIMATIONS.WALK_LEFT, 'repeat');
+                    }
+                } else {
+                    // Forward/backward
+                    if (joystickY > 0) {
+                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_FORWARD : ANIMATIONS.WALK_FORWARD, 'repeat');
+                    } else {
+                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_BACKWARDS : ANIMATIONS.WALK_BACKWARDS, 'repeat');
+                    }
+                }
             }
             
             // ===== Joystick Setup =====
@@ -455,9 +426,9 @@
                 joystickY = 0;
                 joystickHandle.style.transform = 'translate(0px, 0px)';
                 
-                // Only change animation if not playing an action
-                if (!isPlayingAction && !isJumping) {
-                    setAnimation(ANIMATIONS.IDLE);
+                // Only change animation if not jumping
+                if (!isJumping) {
+                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                 }
             });
             
@@ -481,8 +452,8 @@
                 joystickX = deltaX / maxDistance;
                 joystickY = deltaY / maxDistance;
                 
-                // Update movement animation if not playing an action
-                if (!isPlayingAction && !isJumping) {
+                // Update movement animation if not jumping
+                if (!isJumping) {
                     updateMovementAnimation();
                 }
             }
@@ -540,6 +511,10 @@
                 playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
                 
                 player.setAttribute('position', playerPos);
+                
+                // Update HUD
+                if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
+                if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
             }
             
             // ===== Camera Follow =====
@@ -553,10 +528,6 @@
                     y: playerPos.y + 0.3,
                     z: playerPos.z + 0.6
                 });
-                
-                // Update HUD
-                if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
-                if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
             }
             
             // ===== Model Loading =====
@@ -567,6 +538,30 @@
                     console.log('✅ Player model loaded');
                     modelsLoaded++;
                     loadingStatus.textContent = '✓ Player loaded, loading gun...';
+                    
+                    // Log available animations and ensure t-pose is blacklisted
+                    setTimeout(() => {
+                        try {
+                            const mixer = playerModel.components['animation-mixer'];
+                            if (mixer && mixer.clips) {
+                                const availableAnims = mixer.clips.map(clip => clip.name);
+                                console.log('Available animations:', availableAnims);
+                                
+                                // Add any t-pose variants to blacklist
+                                availableAnims.forEach(anim => {
+                                    if (anim.toLowerCase().includes('pose') || anim.includes('t-pose')) {
+                                        if (!BLACKLIST_ANIMATIONS.includes(anim)) {
+                                            BLACKLIST_ANIMATIONS.push(anim);
+                                            console.log('Blacklisted:', anim);
+                                        }
+                                    }
+                                });
+                            }
+                        } catch(e) {
+                            console.warn('Could not get animation list');
+                        }
+                    }, 1000);
+                    
                     checkAllLoaded();
                 });
                 
@@ -617,7 +612,7 @@
                     }, 1000);
                     
                     // Start idle animation
-                    setAnimation(ANIMATIONS.IDLE);
+                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                 }
             }
             
