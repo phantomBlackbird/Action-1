@@ -350,7 +350,7 @@
                 if (!playerPosition) return;
                 
                 // Play jump animation (one-shot)
-                setSafeAnimation(ANIMATIONS.JUMP, 'once');
+                setSafeAnimation(ANIMATIONS.JUMP, 'repeat);
                 
                 // Jump physics
                 const startY = playerPosition.getAttribute('position').y;
@@ -753,7 +753,7 @@
                 
                 const radY = THREE.MathUtils.degToRad(cameraRot.y);
                 const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
-                const speed = magnitude > 0.7 ? RUN_SPEED : WALK_SPEED;
+                const speed = magnitude > 0.9 ? RUN_SPEED : WALK_SPEED;
                 
                 // Calculate movement relative to camera
                 let moveX = 0;
@@ -811,8 +811,8 @@
                 // Position camera rig at player position + offset
                 cameraRig.setAttribute('position', {
                     x: playerPos.x,
-                    y: playerPos.y + 1.5,
-                    z: playerPos.z + 5.0
+                    y: playerPos.y + 2.5,
+                    z: playerPos.z + 7.0
                 });
                 
                 // Make camera look at player
