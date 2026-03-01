@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Larger Player</title>
+    <title>Mini World Explorer - Custom Ground Model</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -139,22 +139,16 @@
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>Player Size: 3x Larger</h3>
+            <h3>Using Custom Ground Model</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
-    </div>
-
-    <div id="hud">
-        <div class="title">⚔️ MINI EXPLORER</div>
-        <div class="size">Size: <span style="color: #88ff88;">3x (0.009 scale)</span></div>
-        <div>X: <span id="pos-x">0.0</span> Z: <span id="pos-z">0.0</span></div>
     </div>
     
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
-    <div id="debug-info">Player Size: 3x larger</div>
+    <div id="debug-info">Ground: Ground.glb</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -168,68 +162,77 @@
         </div>
     </div>
     
-    <a-scene background="color: #1a1a2e" shadow="type: pcfsoft" vr-mode-ui="enabled: false">
+    <a-scene background="color: #87CEEB" shadow="type: pcfsoft" vr-mode-ui="enabled: false" renderer="antialias: true">
         <a-assets>
+            <!-- Your models from GitHub -->
             <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
             <a-asset-item id="gun-model" src="Mpsd.glb"></a-asset-item>
-            <img id="ground-texture" src="https://cdn.aframe.io/aframe-brand/examples/ground.jpg">
+            <a-asset-item id="ground-model" src="Ground.glb"></a-asset-item>
+            <a-asset-item id="subrural-model" src="Subrural.glb"></a-asset-item>
         </a-assets>
 
+        <!-- Ground Model - Your custom ground -->
+        <a-gltf-model 
+            id="ground" 
+            src="#ground-model"
+            position="0 0 0"
+            scale="1 1 1"
+            receive-shadow
+            static-body>
+        </a-gltf-model>
+
         <!-- Player Character - 3x Larger -->
-        <a-entity id="player-position" position="0 0.18 0">  <!-- Height increased 3x (0.06 -> 0.18) -->
-            <!-- This container handles rotation independently -->
+        <a-entity id="player-position" position="0 0.18 0">  <!-- Height adjusted for ground -->
+            <!-- Player rotation container -->
             <a-entity id="player-rotation" position="0 0 0">
                 <a-gltf-model 
                     id="player-model-instance" 
                     src="#player-model"
-                    scale="0.025 0.025 0.025"  <!-- Scale increased 3x (0.003 -> 0.009) -->
-                    animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1">
+                    scale="0.040 0.040 0.040"
+                    animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1"
+                    shadow="cast: true; receive: true">
                 </a-gltf-model>
                 
-                <!-- Gun attached to player - scaled up 3x and position adjusted -->
-                <a-entity id="gun" position="0.9 0.9 0.9" rotation="0 90 0" scale="0.0075 0.0075 0.0075">  <!-- Scale 3x, position 3x -->
-                    <a-gltf-model id="gun-model-instance" src="#gun-model"></a-gltf-model>
+                <!-- Gun attached to player -->
+                <a-entity id="gun" position="0.9 0.9 0.9" rotation="0 90 0" scale="0.0075 0.0075 0.0075">
+                    <a-gltf-model 
+                        id="gun-model-instance" 
+                        src="#gun-model"
+                        shadow="cast: true; receive: true">
+                    </a-gltf-model>
                 </a-entity>
             </a-entity>
         </a-entity>
 
-        <!-- Camera positioned BEHIND the player - adjusted for larger size -->
-        <a-entity id="camera-rig" position="0 1.5 5.0">  <!-- Height increased (0.5 -> 1.5), distance increased (2.5 -> 5.0) -->
+        <!-- Camera Rig - Third Person View -->
+        <a-entity id="camera-rig" position="0 1.5 5.0">
             <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true"></a-camera>
         </a-entity>
         
         <!-- Lighting -->
         <a-light type="ambient" intensity="0.6"></a-light>
-        <a-light type="directional" position="2 5 3" intensity="1.5" castshadow="true"></a-light>
-        <a-light type="point" position="0 3 5" intensity="1.2" color="#FFFFFF"></a-light>
+        <a-light type="directional" position="2 10 3" intensity="1.5" castshadow="true" shadow-mapSize-width="2048" shadow-mapSize-height="2048"></a-light>
+        <a-light type="point" position="0 5 5" intensity="1.0" color="#FFFFFF"></a-light>
         
-        <!-- Ground - increased texture repeat to maintain scale appearance -->
-        <a-plane rotation="-90 0 0" width="200" height="200" material="src: #ground-texture; repeat: 20 20; roughness: 0.8" receive-shadow></a-plane>
+        <!-- Subrural environment model (optional - comment out if not needed) -->
+        <!-- <a-gltf-model 
+            id="environment" 
+            src="#subrural-model"
+            position="0 0 0"
+            scale="1 1 1"
+            shadow="receive: true">
+        </a-gltf-model> -->
         
-        <!-- Environment objects - scaled up to match larger player -->
-        <a-box position="15 1.5 15" width="3" height="3" depth="3" color="#FF6B6B" shadow></a-box>
-        <a-box position="-15 1.5 -15" width="3" height="3" depth="3" color="#4ECDC4" shadow></a-box>
-        <a-cylinder position="9 1.5 -9" radius="1.5" height="3" color="#FFE66D" shadow></a-cylinder>
-        <a-sphere position="-9 1.5 9" radius="1.5" color="#9f7aea" shadow></a-sphere>
-        
-        <!-- Add trees scaled up -->
-        <a-entity position="-20 0 -20">
-            <a-cylinder radius="0.6" height="6" color="#8B4513" shadow></a-cylinder>
-            <a-sphere position="0 3.6 0" radius="1.8" color="#2ECC71" shadow></a-sphere>
-        </a-entity>
-        
-        <a-entity position="20 0 20">
-            <a-cylinder radius="0.6" height="6" color="#8B4513" shadow></a-cylinder>
-            <a-sphere position="0 3.6 0" radius="1.8" color="#2ECC71" shadow></a-sphere>
-        </a-entity>
-        
-        <!-- Reference grid - scaled to match -->
-        <a-grid position="0 0.01 0" width="60" height="60" cell-size="3" material="color: #888; opacity: 0.3"></a-grid>
+        <!-- Simple objects for scale reference (placed on ground) -->
+        <a-box position="5 0.5 5" width="1" height="1" depth="1" color="#FF6B6B" shadow></a-box>
+        <a-box position="-5 0.5 -5" width="1" height="1" depth="1" color="#4ECDC4" shadow></a-box>
+        <a-cylinder position="3 0.5 -3" radius="0.5" height="1" color="#FFE66D" shadow></a-cylinder>
+        <a-sphere position="-3 0.5 3" radius="0.5" color="#9f7aea" shadow></a-sphere>
     </a-scene>
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with 3x Larger Player...');
+            console.log('Starting Mini World Explorer with Custom Ground Model...');
             
             // ===== ANIMATION MAPPING =====
             const ANIMATIONS = {
@@ -280,17 +283,17 @@
             let grenadeInterval = null;
             
             // Movement speed - increased for larger player
-            const WALK_SPEED = 0.06;  // Increased 3x (0.02 -> 0.06)
-            const RUN_SPEED = 0.105;   // Increased 3x (0.035 -> 0.105)
+            const WALK_SPEED = 0.06;
+            const RUN_SPEED = 0.105;
             
             // Rapid fire settings
             const RAPID_FIRE_DELAY = 100;
             const JUMP_DELAY = 400;
             const GRENADE_DELAY = 300;
             
-            // Jump settings - increased for larger player
-            const JUMP_HEIGHT = 0.24;  // Increased 3x (0.08 -> 0.24)
-            const GROUND_LEVEL = 0.18;  // Increased 3x (0.06 -> 0.18)
+            // Jump settings
+            const JUMP_HEIGHT = 0.24;
+            const GROUND_LEVEL = 0.18;  // Adjust based on ground model height
             
             // ===== A-Frame Elements =====
             const scene = document.querySelector('a-scene');
@@ -301,6 +304,7 @@
             const playerModel = document.getElementById('player-model-instance');
             const gun = document.getElementById('gun');
             const gunModel = document.getElementById('gun-model-instance');
+            const groundModel = document.getElementById('ground');
             
             // ===== Safe Animation Function =====
             function setSafeAnimation(animName, loopType = 'repeat') {
@@ -771,7 +775,7 @@
                 playerPos.x += moveX;
                 playerPos.z += moveZ;
                 
-                // Keep in bounds
+                // Keep in bounds (adjust based on ground size)
                 playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
                 playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
                 
@@ -795,7 +799,7 @@
                 if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
                 
                 // Update debug info
-                debugInfo.innerHTML = `Player Size: 3x<br>Y: ${playerPos.y.toFixed(2)}`;
+                debugInfo.innerHTML = `Ground: Ground.glb<br>Y: ${playerPos.y.toFixed(2)}`;
             }
             
             // ===== CAMERA FOLLOW (Third Person) =====
@@ -807,8 +811,8 @@
                 // Position camera rig at player position + offset
                 cameraRig.setAttribute('position', {
                     x: playerPos.x,
-                    y: playerPos.y + 1.5,  // Height above player (3x)
-                    z: playerPos.z + 5.0    // Distance behind player (3x)
+                    y: playerPos.y + 1.5,
+                    z: playerPos.z + 5.0
                 });
                 
                 // Make camera look at player
@@ -822,14 +826,19 @@
             
             // ===== Model Loading =====
             let modelsLoaded = 0;
+            const totalModels = 3; // Player, Gun, Ground
+            
+            function updateLoadingProgress() {
+                loadingStatus.textContent = `Loading models... (${modelsLoaded}/${totalModels})`;
+            }
             
             if (playerModel) {
                 playerModel.addEventListener('model-loaded', () => {
                     console.log('✅ Player model loaded');
                     modelsLoaded++;
-                    loadingStatus.textContent = '✓ Player loaded, loading gun...';
+                    updateLoadingProgress();
                     
-                    // Make player visible by setting a default rotation
+                    // Make player visible
                     if (playerRotation) {
                         playerRotation.setAttribute('rotation', {x: 0, y: 0, z: 0});
                     }
@@ -856,8 +865,8 @@
                 
                 playerModel.addEventListener('error', (e) => {
                     console.error('Player model error:', e);
-                    loadingStatus.textContent = '⚠️ Using fallback';
                     modelsLoaded++;
+                    updateLoadingProgress();
                     checkAllLoaded();
                 });
             }
@@ -866,15 +875,17 @@
                 gunModel.addEventListener('model-loaded', () => {
                     console.log('✅ Gun model loaded');
                     modelsLoaded++;
-                    loadingStatus.textContent = '✓ Gun loaded';
+                    updateLoadingProgress();
                     gunModel.setAttribute('visible', 'true');
                     checkAllLoaded();
                 });
                 
                 gunModel.addEventListener('error', (e) => {
                     console.error('Gun model error:', e);
-                    loadingStatus.textContent = '⚠️ Using simple gun';
+                    modelsLoaded++;
+                    updateLoadingProgress();
                     
+                    // Create simple gun as fallback
                     const simpleGun = document.createElement('a-box');
                     simpleGun.setAttribute('width', '0.2');
                     simpleGun.setAttribute('height', '0.1');
@@ -883,13 +894,43 @@
                     simpleGun.setAttribute('position', '0 0 0');
                     gun.appendChild(simpleGun);
                     
+                    checkAllLoaded();
+                });
+            }
+            
+            if (groundModel) {
+                groundModel.addEventListener('model-loaded', () => {
+                    console.log('✅ Ground model loaded');
                     modelsLoaded++;
+                    updateLoadingProgress();
+                    
+                    // Adjust ground position/size if needed
+                    // You might need to scale or position the ground based on its actual dimensions
+                    groundModel.setAttribute('shadow', 'receive: true');
+                    
+                    checkAllLoaded();
+                });
+                
+                groundModel.addEventListener('error', (e) => {
+                    console.error('Ground model error:', e);
+                    modelsLoaded++;
+                    updateLoadingProgress();
+                    
+                    // Create fallback ground plane if model fails
+                    const fallbackGround = document.createElement('a-plane');
+                    fallbackGround.setAttribute('rotation', '-90 0 0');
+                    fallbackGround.setAttribute('width', '200');
+                    fallbackGround.setAttribute('height', '200');
+                    fallbackGround.setAttribute('color', '#3a6ea5');
+                    fallbackGround.setAttribute('receive-shadow', 'true');
+                    scene.appendChild(fallbackGround);
+                    
                     checkAllLoaded();
                 });
             }
             
             function checkAllLoaded() {
-                if (modelsLoaded >= 2) {
+                if (modelsLoaded >= totalModels) {
                     loadingStatus.textContent = '✨ World ready!';
                     
                     setTimeout(() => {
