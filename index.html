@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Animation Sync Fixed</title>
+    <title>Mini World Explorer - Animation Synced Movement</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -61,20 +61,24 @@
         }
         
         .action-buttons {
-            display: flex; gap: 15px; pointer-events: auto;
+            display: flex; gap: 10px; pointer-events: auto;
             flex-wrap: wrap; justify-content: flex-end;
-            max-width: 300px;
+            max-width: 350px;
         }
         
         .action-btn {
-            width: 80px; height: 80px; border-radius: 40px;
+            width: 70px; height: 70px; border-radius: 35px;
             background: rgba(30, 30, 50, 0.8); border: 3px solid #4a9eff;
-            color: white; font-size: 14px; font-weight: bold;
+            color: white; font-size: 12px; font-weight: bold;
             backdrop-filter: blur(5px); cursor: pointer;
             transition: all 0.1s;
             box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
             touch-action: manipulation;
             user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
         .action-btn:active { transform: scale(0.95); background: #4a9eff; }
@@ -87,6 +91,7 @@
         #jump-btn { border-color: #ffaa00; }
         #shoot-btn { border-color: #ff4757; }
         #grenade-btn { border-color: #9f7aea; }
+        #reload-btn { border-color: #4a9eff; }
         
         #hud {
             position: fixed; top: 20px; left: 20px; color: white;
@@ -139,7 +144,7 @@
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>Animation Sync Fixed</h3>
+            <h3>Animation Synced Movement</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
@@ -154,7 +159,7 @@
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
-    <div id="debug-info">Animation Sync: Fixed</div>
+    <div id="debug-info">Movement: Animation Synced</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -162,9 +167,10 @@
         </div>
         
         <div class="action-buttons">
-            <button class="action-btn" id="jump-btn">🦘 JUMP</button>
-            <button class="action-btn" id="shoot-btn">🔫 SHOOT</button>
-            <button class="action-btn" id="grenade-btn">💣 GRENADE</button>
+            <button class="action-btn" id="jump-btn">JUMP</button>
+            <button class="action-btn" id="shoot-btn">SHOOT</button>
+            <button class="action-btn" id="grenade-btn"> GRENADE</button>
+            <button class="action-btn" id="reload-btn">RELOAD</button>
         </div>
     </div>
     
@@ -185,13 +191,13 @@
             static-body>
         </a-gltf-model>
 
-        <!-- Player - Fixed structure -->
+        <!-- Player -->
         <a-entity id="player" position="0 0.18 0">
             <a-gltf-model 
                 id="player-model-instance" 
                 src="#player-model"
                 scale="0.020 0.020 0.020"
-                animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1"
+                animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.2"
                 shadow="cast: true; receive: true">
             </a-gltf-model>
             
@@ -216,26 +222,55 @@
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with Animation Sync Fix...');
+            console.log('Starting Mini World Explorer with Animation Synced Movement...');
             
-            // ===== ANIMATION MAPPING =====
+            // ===== ANIMATION MAPPING (Based on screenshot) =====
             const ANIMATIONS = {
+                // Movement animations
                 IDLE: 'idle',
-                RUN_FORWARD: 'run-forward',
-                RUN_BACKWARDS: 'run-backwards',
-                RUN_LEFT: 'run-left',
-                RUN_RIGHT: 'run-right',
                 WALK_FORWARD: 'walk-forward',
                 WALK_BACKWARDS: 'walk-backwards',
                 WALK_LEFT: 'walk-left',
                 WALK_RIGHT: 'walk-right',
+                RUN_FORWARD: 'run-forward',
+                RUN_BACKWARDS: 'run-backwards',
+                RUN_LEFT: 'run-left',
+                RUN_RIGHT: 'run-right',
+                
+                // Action animations
                 JUMP: 'jump',
                 SHOOT_RIFLE: 'shoot-rifle',
-                THROW_GRENADE: 'throw-grenade'
+                SHOOT_PISTOL: 'shoot-pistol',
+                THROW_GRENADE: 'throw-grenade',
+                RELOADING: 'reloading',
+                HIT_REACTION_1: 'hit-reaction-1',
+                HIT_REACTION_2: 'hit-reaction-2',
+                
+                // Debug
+                T_POSE: 't-pose'
+            };
+            
+            // Animation durations (in seconds) - will be updated from actual model
+            const ANIMATION_DURATIONS = {
+                [ANIMATIONS.WALK_FORWARD]: 1.0,
+                [ANIMATIONS.WALK_BACKWARDS]: 1.0,
+                [ANIMATIONS.WALK_LEFT]: 1.0,
+                [ANIMATIONS.WALK_RIGHT]: 1.0,
+                [ANIMATIONS.RUN_FORWARD]: 0.6,
+                [ANIMATIONS.RUN_BACKWARDS]: 0.6,
+                [ANIMATIONS.RUN_LEFT]: 0.6,
+                [ANIMATIONS.RUN_RIGHT]: 0.6,
+                [ANIMATIONS.JUMP]: 0.5,
+                [ANIMATIONS.SHOOT_RIFLE]: 0.6,
+                [ANIMATIONS.SHOOT_PISTOL]: 0.5,
+                [ANIMATIONS.THROW_GRENADE]: 0.8,
+                [ANIMATIONS.RELOADING]: 0.7,
+                [ANIMATIONS.HIT_REACTION_1]: 0.5,
+                [ANIMATIONS.HIT_REACTION_2]: 0.5
             };
             
             // Blacklist
-            const BLACKLIST_ANIMATIONS = ['t-pose'];
+            const BLACKLIST_ANIMATIONS = [ANIMATIONS.T_POSE];
             
             // ===== DOM Elements =====
             const loadingScreen = document.getElementById('loading-screen');
@@ -250,6 +285,7 @@
             const jumpBtn = document.getElementById('jump-btn');
             const shootBtn = document.getElementById('shoot-btn');
             const grenadeBtn = document.getElementById('grenade-btn');
+            const reloadBtn = document.getElementById('reload-btn');
             
             // ===== State =====
             let joystickActive = false;
@@ -260,20 +296,28 @@
             let jumpActive = false;
             let shootingActive = false;
             let grenadeActive = false;
+            let reloadActive = false;
             
             // Intervals
             let jumpInterval = null;
             let shootInterval = null;
             let grenadeInterval = null;
+            let reloadInterval = null;
             
-            // Movement speed - ADJUSTED to match animation speed
-            const WALK_SPEED = 0.045;  // Reduced to match walk animation cycle
-            const RUN_SPEED = 0.08;     // Reduced to match run animation cycle
+            // Movement speed - CALCULATED based on animation duration
+            // For a 1-second walk cycle, we want to move a certain distance
+            const WALK_DISTANCE_PER_CYCLE = 0.3; // Distance covered in one walk cycle
+            const RUN_DISTANCE_PER_CYCLE = 0.5;  // Distance covered in one run cycle
+            
+            // These will be calculated once we know actual animation durations
+            let WALK_SPEED = 0.3;  // Default, will be adjusted
+            let RUN_SPEED = 0.83;   // Default, will be adjusted
             
             // Rapid fire settings
             const RAPID_FIRE_DELAY = 100;
             const JUMP_DELAY = 400;
             const GRENADE_DELAY = 300;
+            const RELOAD_DELAY = 700;
             
             // Jump settings
             const JUMP_HEIGHT = 0.24;
@@ -288,29 +332,63 @@
             
             // Track animation state
             let currentAnim = ANIMATIONS.IDLE;
-            let lastMoveTime = 0;
-            let moveDirection = { x: 0, z: 0 };
+            let animationMixer = null;
+            
+            // ===== Animation Speed Calculator =====
+            function updateMovementSpeedFromAnimations() {
+                // Get actual animation durations from the model
+                if (animationMixer && animationMixer.clips) {
+                    animationMixer.clips.forEach(clip => {
+                        const duration = clip.duration;
+                        const name = clip.name;
+                        
+                        // Update durations in our map
+                        if (ANIMATION_DURATIONS.hasOwnProperty(name)) {
+                            ANIMATION_DURATIONS[name] = duration;
+                            console.log(`Animation ${name} duration: ${duration}s`);
+                        }
+                    });
+                    
+                    // Calculate speeds based on actual animation durations
+                    const walkDuration = ANIMATION_DURATIONS[ANIMATIONS.WALK_FORWARD] || 1.0;
+                    const runDuration = ANIMATION_DURATIONS[ANIMATIONS.RUN_FORWARD] || 0.6;
+                    
+                    WALK_SPEED = WALK_DISTANCE_PER_CYCLE / walkDuration;
+                    RUN_SPEED = RUN_DISTANCE_PER_CYCLE / runDuration;
+                    
+                    console.log(`Calculated speeds - Walk: ${WALK_SPEED}, Run: ${RUN_SPEED}`);
+                    
+                    debugInfo.innerHTML = `Walk: ${WALK_SPEED.toFixed(3)}/s<br>Run: ${RUN_SPEED.toFixed(3)}/s`;
+                }
+            }
             
             // ===== Safe Animation Function =====
-            function setSafeAnimation(animName, loopType = 'repeat') {
+            function setSafeAnimation(animName, loopType = 'repeat', playOnce = false) {
                 if (!playerModel) return;
                 
-                // Don't re-set the same animation (prevents animation restart glitch)
-                if (currentAnim === animName && loopType === 'repeat') {
-                    return;
-                }
-                
+                // NEVER play blacklisted animations
                 if (BLACKLIST_ANIMATIONS.includes(animName)) {
+                    console.warn('Blocked blacklisted animation:', animName);
                     animName = ANIMATIONS.IDLE;
                 }
                 
+                // Don't re-set the same looping animation
+                if (currentAnim === animName && loopType === 'repeat' && !playOnce) {
+                    return;
+                }
+                
+                // Update UI
                 let displayName = animName.toUpperCase();
                 if (animName === ANIMATIONS.IDLE) displayName = 'IDLE';
-                else if (animName.includes('run')) displayName = '🏃 RUNNING';
-                else if (animName.includes('walk')) displayName = '🚶 WALKING';
+                else if (animName === ANIMATIONS.RUN_FORWARD) displayName = '🏃 RUNNING';
+                else if (animName === ANIMATIONS.WALK_FORWARD) displayName = '🚶 WALKING';
+                else if (animName.includes('run')) displayName = '🏃 ' + animName.replace('run-', '').toUpperCase();
+                else if (animName.includes('walk')) displayName = '🚶 ' + animName.replace('walk-', '').toUpperCase();
                 else if (animName === ANIMATIONS.SHOOT_RIFLE) displayName = '🔫 SHOOTING';
                 else if (animName === ANIMATIONS.JUMP) displayName = '🦘 JUMPING';
                 else if (animName === ANIMATIONS.THROW_GRENADE) displayName = '💣 GRENADE';
+                else if (animName === ANIMATIONS.RELOADING) displayName = '🔄 RELOADING';
+                else if (animName.includes('hit')) displayName = '💥 HIT';
                 
                 animStatus.textContent = displayName;
                 currentAnim = animName;
@@ -319,14 +397,34 @@
                     playerModel.setAttribute('animation-mixer', {
                         clip: animName,
                         loop: loopType,
-                        crossFadeDuration: 0.1,
+                        crossFadeDuration: 0.2,
                         timeScale: 1.0
                     });
                 } catch (e) {
-                    playerModel.setAttribute('animation-mixer', {
-                        clip: ANIMATIONS.IDLE,
-                        loop: 'repeat'
-                    });
+                    console.warn('Could not play animation:', animName);
+                }
+            }
+            
+            // ===== Movement Animation Selection =====
+            function getMovementAnimation() {
+                if (!joystickActive) return ANIMATIONS.IDLE;
+                
+                const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
+                if (magnitude < 0.1) return ANIMATIONS.IDLE;
+                
+                const isRunning = magnitude > 0.7;
+                
+                // Determine primary direction
+                if (Math.abs(joystickX) > Math.abs(joystickY)) {
+                    // Strafe left/right
+                    return joystickX > 0 
+                        ? (isRunning ? ANIMATIONS.RUN_RIGHT : ANIMATIONS.WALK_RIGHT)
+                        : (isRunning ? ANIMATIONS.RUN_LEFT : ANIMATIONS.WALK_LEFT);
+                } else {
+                    // Forward/backward
+                    return joystickY > 0 
+                        ? (isRunning ? ANIMATIONS.RUN_FORWARD : ANIMATIONS.WALK_FORWARD)
+                        : (isRunning ? ANIMATIONS.RUN_BACKWARDS : ANIMATIONS.WALK_BACKWARDS);
                 }
             }
             
@@ -334,11 +432,11 @@
             function performJump() {
                 if (!player) return;
                 
-                setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
+                setSafeAnimation(ANIMATIONS.JUMP,'repeat', true);
                 
                 const startY = player.getAttribute('position').y;
                 const jumpStart = Date.now();
-                const JUMP_DURATION = 500;
+                const JUMP_DURATION = (ANIMATION_DURATIONS[ANIMATIONS.JUMP] || 0.5) * 1000;
                 
                 function animateJump() {
                     const elapsed = Date.now() - jumpStart;
@@ -362,6 +460,7 @@
                 animateJump();
             }
             
+            // ===== Action Functions =====
             function startJumping() {
                 if (jumpActive) return;
                 jumpActive = true;
@@ -379,18 +478,9 @@
                     clearInterval(jumpInterval);
                     jumpInterval = null;
                 }
-                if (shootingActive) {
-                    setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
-                } else if (grenadeActive) {
-                    setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
-                } else if (joystickActive) {
-                    updateMovementAnimation();
-                } else {
-                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                }
+                updatePostActionAnimation();
             }
             
-            // ===== Shoot Functions =====
             function startShooting() {
                 if (shootingActive) return;
                 shootingActive = true;
@@ -424,18 +514,9 @@
                 if (gunModel) {
                     gunModel.setAttribute('material', 'emissive', '#000000');
                 }
-                if (jumpActive) {
-                    setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
-                } else if (grenadeActive) {
-                    setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
-                } else if (joystickActive) {
-                    updateMovementAnimation();
-                } else {
-                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                }
+                updatePostActionAnimation();
             }
             
-            // ===== Grenade Functions =====
             function startGrenade() {
                 if (grenadeActive) return;
                 grenadeActive = true;
@@ -464,47 +545,55 @@
                 if (gunModel) {
                     gunModel.setAttribute('material', 'emissive', '#000000');
                 }
+                updatePostActionAnimation();
+            }
+            
+            function startReload() {
+                if (reloadActive) return;
+                reloadActive = true;
+                reloadBtn.classList.add('holding');
+                setSafeAnimation(ANIMATIONS.RELOADING, 'repeat');
+                
+                reloadInterval = setInterval(() => {
+                    if (!reloadActive) return;
+                    // Visual feedback for reload
+                    gunModel?.setAttribute('material', 'emissive', '#4a9eff');
+                    gunModel?.setAttribute('material', 'emissiveIntensity', '1.0');
+                    setTimeout(() => {
+                        if (reloadActive) {
+                            gunModel?.setAttribute('material', 'emissive', '#000000');
+                        }
+                    }, 100);
+                }, RELOAD_DELAY);
+            }
+            
+            function stopReload() {
+                reloadActive = false;
+                reloadBtn.classList.remove('holding');
+                if (reloadInterval) {
+                    clearInterval(reloadInterval);
+                    reloadInterval = null;
+                }
+                if (gunModel) {
+                    gunModel.setAttribute('material', 'emissive', '#000000');
+                }
+                updatePostActionAnimation();
+            }
+            
+            function updatePostActionAnimation() {
                 if (jumpActive) {
                     setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
                 } else if (shootingActive) {
                     setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
+                } else if (grenadeActive) {
+                    setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
+                } else if (reloadActive) {
+                    setSafeAnimation(ANIMATIONS.RELOADING, 'repeat');
                 } else if (joystickActive) {
-                    updateMovementAnimation();
+                    const anim = getMovementAnimation();
+                    setSafeAnimation(anim, 'repeat');
                 } else {
                     setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                }
-            }
-            
-            // ===== Movement Animation =====
-            function updateMovementAnimation() {
-                if (jumpActive || shootingActive || grenadeActive) return;
-                
-                if (!joystickActive) {
-                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                    return;
-                }
-                
-                const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
-                
-                if (magnitude < 0.1) {
-                    setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
-                    return;
-                }
-                
-                const isRunning = magnitude > 0.7;
-                
-                if (Math.abs(joystickX) > Math.abs(joystickY)) {
-                    if (joystickX > 0) {
-                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_RIGHT : ANIMATIONS.WALK_RIGHT, 'repeat');
-                    } else {
-                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_LEFT : ANIMATIONS.WALK_LEFT, 'repeat');
-                    }
-                } else {
-                    if (joystickY > 0) {
-                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_FORWARD : ANIMATIONS.WALK_FORWARD, 'repeat');
-                    } else {
-                        setSafeAnimation(isRunning ? ANIMATIONS.RUN_BACKWARDS : ANIMATIONS.WALK_BACKWARDS, 'repeat');
-                    }
                 }
             }
             
@@ -515,14 +604,12 @@
             moveJoystick.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 joystickActive = true;
-                lastMoveTime = Date.now();
                 updateJoystick(e.touches[0]);
             });
             
             moveJoystick.addEventListener('touchmove', (e) => {
                 e.preventDefault();
                 if (joystickActive) {
-                    lastMoveTime = Date.now();
                     updateJoystick(e.touches[0]);
                 }
             });
@@ -533,9 +620,8 @@
                 joystickX = 0;
                 joystickY = 0;
                 joystickHandle.style.transform = 'translate(0px, 0px)';
-                moveDirection = { x: 0, z: 0 };
                 
-                if (!jumpActive && !shootingActive && !grenadeActive) {
+                if (!jumpActive && !shootingActive && !grenadeActive && !reloadActive) {
                     setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                 }
             });
@@ -560,8 +646,10 @@
                 joystickX = deltaX / maxDistance;
                 joystickY = deltaY / maxDistance;
                 
-                if (!jumpActive && !shootingActive && !grenadeActive) {
-                    updateMovementAnimation();
+                // Update animation if not doing actions
+                if (!jumpActive && !shootingActive && !grenadeActive && !reloadActive) {
+                    const anim = getMovementAnimation();
+                    setSafeAnimation(anim, 'repeat');
                 }
             }
             
@@ -578,7 +666,11 @@
             grenadeBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopGrenade(); });
             grenadeBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopGrenade(); });
             
-            // ===== FIXED MOVEMENT SYSTEM - Continuous movement =====
+            reloadBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startReload(); });
+            reloadBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopReload(); });
+            reloadBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopReload(); });
+            
+            // ===== FIXED MOVEMENT SYSTEM =====
             function movePlayer() {
                 if (!joystickActive || !player || !camera) return;
                 
@@ -593,16 +685,16 @@
                 const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
                 if (magnitude < 0.1) return; // Dead zone
                 
-                // Use time-based movement for smooth continuous motion
-                const deltaTime = 16; // Assume 60fps (16ms per frame)
-                const speed = (magnitude > 0.7 ? RUN_SPEED : WALK_SPEED) * (deltaTime / 16);
+                // Determine if running or walking
+                const isRunning = magnitude > 0.7;
+                const speed = isRunning ? RUN_SPEED : WALK_SPEED;
                 
                 // Calculate movement direction based on camera
-                // Forward/back (joystick Y)
-                const moveX = (Math.sin(radY) * joystickY + Math.sin(radY + Math.PI/2) * joystickX) * speed;
-                const moveZ = (Math.cos(radY) * joystickY + Math.cos(radY + Math.PI/2) * joystickX) * speed;
+                // Forward/back relative to camera (joystick Y)
+                const moveX = (Math.sin(radY) * joystickY + Math.sin(radY + Math.PI/2) * joystickX) * speed * 0.016; // 0.016 = ~1/60 for frame rate independence
+                const moveZ = (Math.cos(radY) * joystickY + Math.cos(radY + Math.PI/2) * joystickX) * speed * 0.016;
                 
-                // Apply movement - CONTINUOUS, no reset
+                // Apply movement
                 playerPos.x += moveX;
                 playerPos.z += moveZ;
                 
@@ -613,11 +705,10 @@
                 player.setAttribute('position', playerPos);
                 
                 // Rotate player to face movement direction (smoothly)
-                if (Math.abs(moveX) > 0.001 || Math.abs(moveZ) > 0.001) {
+                if (Math.abs(moveX) > 0.0001 || Math.abs(moveZ) > 0.0001) {
                     const targetAngle = Math.atan2(moveX, moveZ);
                     const targetDeg = THREE.MathUtils.radToDeg(targetAngle);
                     
-                    // Smooth rotation to prevent snapping
                     const currentRot = player.getAttribute('rotation') || {x: 0, y: 0, z: 0};
                     let currentY = currentRot.y;
                     
@@ -627,16 +718,13 @@
                     while (diff < -180) diff += 360;
                     
                     // Apply smooth rotation
-                    const newY = currentY + diff * 0.1;
+                    const newY = currentY + diff * 0.15;
                     player.setAttribute('rotation', {x: 0, y: newY, z: 0});
                 }
                 
                 // Update HUD
                 if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
                 if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
-                
-                // Debug - show movement info
-                debugInfo.innerHTML = `Move: ${moveX.toFixed(3)}, ${moveZ.toFixed(3)}<br>Anim: ${currentAnim}`;
             }
             
             // ===== CAMERA FOLLOW =====
@@ -679,24 +767,37 @@
                     modelsLoaded++;
                     loadingStatus.textContent = `Loading models... (${modelsLoaded}/${totalModels})`;
                     
-                    // Get actual animation durations from the model
+                    // Get animation mixer and durations
                     setTimeout(() => {
                         try {
-                            const mixer = playerModel.components['animation-mixer'];
-                            if (mixer && mixer.clips) {
-                                console.log('Available animations:');
-                                mixer.clips.forEach(clip => {
-                                    console.log(` - ${clip.name}: ${clip.duration}s`);
-                                    
-                                    // Blacklist t-pose
-                                    if (clip.name.toLowerCase().includes('pose')) {
-                                        if (!BLACKLIST_ANIMATIONS.includes(clip.name)) {
-                                            BLACKLIST_ANIMATIONS.push(clip.name);
+                            const mixerComponent = playerModel.components['animation-mixer'];
+                            if (mixerComponent && mixerComponent.mixer) {
+                                animationMixer = mixerComponent.mixer;
+                                if (animationMixer.clips) {
+                                    console.log('Available animations:');
+                                    animationMixer.clips.forEach(clip => {
+                                        console.log(` - ${clip.name}: ${clip.duration.toFixed(2)}s`);
+                                        
+                                        // Update durations
+                                        if (ANIMATION_DURATIONS.hasOwnProperty(clip.name)) {
+                                            ANIMATION_DURATIONS[clip.name] = clip.duration;
                                         }
-                                    }
-                                });
+                                        
+                                        // Blacklist t-pose
+                                        if (clip.name.toLowerCase().includes('pose')) {
+                                            if (!BLACKLIST_ANIMATIONS.includes(clip.name)) {
+                                                BLACKLIST_ANIMATIONS.push(clip.name);
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Calculate movement speeds based on actual animation durations
+                                    updateMovementSpeedFromAnimations();
+                                }
                             }
-                        } catch(e) {}
+                        } catch(e) {
+                            console.warn('Could not get animation durations:', e);
+                        }
                     }, 1000);
                     
                     checkAllLoaded();
@@ -757,11 +858,10 @@
             let lastFrameTime = 0;
             
             function gameLoop(currentTime) {
-                // Calculate delta time for smooth movement
                 if (!lastFrameTime) lastFrameTime = currentTime;
                 const deltaTime = currentTime - lastFrameTime;
                 
-                // Only update if delta time is reasonable (prevent huge jumps)
+                // Only update if delta time is reasonable
                 if (deltaTime < 100) {
                     movePlayer();
                     updateCamera();
@@ -778,4 +878,4 @@
         })();
     </script>
 </body>
-</html>
+    </html>
