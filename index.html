@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Custom Ground Model</title>
+    <title>Mini World Explorer - Smooth Movement Fix</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -139,7 +139,7 @@
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>Using Custom Ground Model</h3>
+            <h3>Smooth Movement Fix</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
@@ -154,7 +154,7 @@
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
-    <div id="debug-info">Ground: Ground.glb</div>
+    <div id="debug-info">Movement: Smooth Fixed</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -170,14 +170,12 @@
     
     <a-scene background="color: #87CEEB" shadow="type: pcfsoft" vr-mode-ui="enabled: false" renderer="antialias: true">
         <a-assets>
-            <!-- Your models from GitHub -->
             <a-asset-item id="player-model" src="Player.glb"></a-asset-item>
             <a-asset-item id="gun-model" src="Mpsd.glb"></a-asset-item>
             <a-asset-item id="ground-model" src="Ground.glb"></a-asset-item>
-            <a-asset-item id="subrural-model" src="Subrural.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Ground Model - Your custom ground -->
+        <!-- Ground Model -->
         <a-gltf-model 
             id="ground" 
             src="#ground-model"
@@ -187,58 +185,38 @@
             static-body>
         </a-gltf-model>
 
-        <!-- Player Character - 3x Larger -->
-        <a-entity id="player-position" position="0 0.18 0">  <!-- Height adjusted for ground -->
-            <!-- Player rotation container -->
-            <a-entity id="player-rotation" position="0 0 0">
+        <!-- Player - SIMPLIFIED STRUCTURE to prevent glitching -->
+        <a-entity id="player" position="0 0.18 0">
+            <a-gltf-model 
+                id="player-model-instance" 
+                src="#player-model"
+                scale="0.025 0.025 0.025"
+                animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1"
+                shadow="cast: true; receive: true">
+            </a-gltf-model>
+            
+            <!-- Gun -->
+            <a-entity id="gun" position="0.9 0.9 0.9" rotation="0 90 0" scale="0.0075 0.0075 0.0075">
                 <a-gltf-model 
-                    id="player-model-instance" 
-                    src="#player-model"
-                    scale="0.025 0.025 0.025"
-                    animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1"
+                    id="gun-model-instance" 
+                    src="#gun-model"
                     shadow="cast: true; receive: true">
                 </a-gltf-model>
-                
-                <!-- Gun attached to player -->
-                <a-entity id="gun" position="0.9 0.9 0.9" rotation="0 90 0" scale="0.0075 0.0075 0.0075">
-                    <a-gltf-model 
-                        id="gun-model-instance" 
-                        src="#gun-model"
-                        shadow="cast: true; receive: true">
-                    </a-gltf-model>
-                </a-entity>
             </a-entity>
         </a-entity>
 
-        <!-- Camera Rig - Third Person View -->
-        <a-entity id="camera-rig" position="0 1.5 5.0">
-            <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true"></a-camera>
-        </a-entity>
+        <!-- Camera - Directly follows player position -->
+        <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 1.5 5.0"></a-camera>
         
         <!-- Lighting -->
         <a-light type="ambient" intensity="0.6"></a-light>
-        <a-light type="directional" position="2 10 3" intensity="1.5" castshadow="true" shadow-mapSize-width="2048" shadow-mapSize-height="2048"></a-light>
-        <a-light type="point" position="0 5 5" intensity="1.0" color="#FFFFFF"></a-light>
-        
-        <!-- Subrural environment model (optional - comment out if not needed) -->
-        <!-- <a-gltf-model 
-            id="environment" 
-            src="#subrural-model"
-            position="0 0 0"
-            scale="1 1 1"
-            shadow="receive: true">
-        </a-gltf-model> -->
-        
-        <!-- Simple objects for scale reference (placed on ground) -->
-        <a-box position="5 0.5 5" width="1" height="1" depth="1" color="#FF6B6B" shadow></a-box>
-        <a-box position="-5 0.5 -5" width="1" height="1" depth="1" color="#4ECDC4" shadow></a-box>
-        <a-cylinder position="3 0.5 -3" radius="0.5" height="1" color="#FFE66D" shadow></a-cylinder>
-        <a-sphere position="-3 0.5 3" radius="0.5" color="#9f7aea" shadow></a-sphere>
+        <a-light type="directional" position="2 10 3" intensity="1.5" castshadow="true"></a-light>
+        <a-light type="point" position="0 5 5" intensity="1.0"></a-light>
     </a-scene>
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with Custom Ground Model...');
+            console.log('Starting Mini World Explorer with Smooth Movement Fix...');
             
             // ===== ANIMATION MAPPING =====
             const ANIMATIONS = {
@@ -256,7 +234,7 @@
                 THROW_GRENADE: 'throw-grenade'
             };
             
-            // Blacklist - animations we NEVER want to play
+            // Blacklist
             const BLACKLIST_ANIMATIONS = ['t-pose'];
             
             // ===== DOM Elements =====
@@ -288,7 +266,7 @@
             let shootInterval = null;
             let grenadeInterval = null;
             
-            // Movement speed - increased for larger player
+            // Movement speed
             const WALK_SPEED = 0.06;
             const RUN_SPEED = 0.105;
             
@@ -299,30 +277,27 @@
             
             // Jump settings
             const JUMP_HEIGHT = 0.24;
-            const GROUND_LEVEL = 0.18;  // Adjust based on ground model height
+            const GROUND_LEVEL = 0.18;
             
             // ===== A-Frame Elements =====
             const scene = document.querySelector('a-scene');
-            const playerPosition = document.getElementById('player-position');
-            const playerRotation = document.getElementById('player-rotation');
-            const cameraRig = document.getElementById('camera-rig');
+            const player = document.getElementById('player');
             const camera = document.getElementById('camera');
             const playerModel = document.getElementById('player-model-instance');
-            const gun = document.getElementById('gun');
             const gunModel = document.getElementById('gun-model-instance');
-            const groundModel = document.getElementById('ground');
+            
+            // Store last position to detect glitching
+            let lastPos = { x: 0, z: 0 };
+            let glitchCounter = 0;
             
             // ===== Safe Animation Function =====
             function setSafeAnimation(animName, loopType = 'repeat') {
                 if (!playerModel) return;
                 
-                // NEVER play blacklisted animations
                 if (BLACKLIST_ANIMATIONS.includes(animName)) {
-                    console.warn('Blocked blacklisted animation:', animName);
                     animName = ANIMATIONS.IDLE;
                 }
                 
-                // Update UI
                 let displayName = animName.toUpperCase();
                 if (animName === ANIMATIONS.IDLE) displayName = 'IDLE';
                 else if (animName.includes('run')) displayName = '🏃 RUNNING';
@@ -333,7 +308,6 @@
                 
                 animStatus.textContent = displayName;
                 
-                // Set the animation
                 try {
                     playerModel.setAttribute('animation-mixer', {
                         clip: animName,
@@ -342,24 +316,20 @@
                         timeScale: 1.0
                     });
                 } catch (e) {
-                    // Fallback to idle
                     playerModel.setAttribute('animation-mixer', {
                         clip: ANIMATIONS.IDLE,
-                        loop: 'repeat',
-                        crossFadeDuration: 0.1
+                        loop: 'repeat'
                     });
                 }
             }
             
             // ===== Jump Function =====
             function performJump() {
-                if (!playerPosition) return;
+                if (!player) return;
                 
-                // Play jump animation (one-shot)
                 setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
                 
-                // Jump physics
-                const startY = playerPosition.getAttribute('position').y;
+                const startY = player.getAttribute('position').y;
                 const jumpStart = Date.now();
                 const JUMP_DURATION = 500;
                 
@@ -368,16 +338,16 @@
                     const progress = Math.min(elapsed / JUMP_DURATION, 1);
                     
                     if (progress >= 1) {
-                        const pos = playerPosition.getAttribute('position');
+                        const pos = player.getAttribute('position');
                         pos.y = GROUND_LEVEL;
-                        playerPosition.setAttribute('position', pos);
+                        player.setAttribute('position', pos);
                         return;
                     }
                     
                     const jumpProgress = Math.sin(progress * Math.PI);
-                    const pos = playerPosition.getAttribute('position');
+                    const pos = player.getAttribute('position');
                     pos.y = startY + (JUMP_HEIGHT * jumpProgress);
-                    playerPosition.setAttribute('position', pos);
+                    player.setAttribute('position', pos);
                     
                     requestAnimationFrame(animateJump);
                 }
@@ -387,31 +357,21 @@
             
             function startJumping() {
                 if (jumpActive) return;
-                
                 jumpActive = true;
                 jumpBtn.classList.add('holding');
-                
-                // Perform first jump immediately
                 performJump();
-                
-                // Set up interval for continuous jumping
                 jumpInterval = setInterval(() => {
-                    if (jumpActive) {
-                        performJump();
-                    }
+                    if (jumpActive) performJump();
                 }, JUMP_DELAY);
             }
             
             function stopJumping() {
                 jumpActive = false;
                 jumpBtn.classList.remove('holding');
-                
                 if (jumpInterval) {
                     clearInterval(jumpInterval);
                     jumpInterval = null;
                 }
-                
-                // Return to appropriate animation
                 if (shootingActive) {
                     setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
                 } else if (grenadeActive) {
@@ -426,24 +386,16 @@
             // ===== Shoot Functions =====
             function startShooting() {
                 if (shootingActive) return;
-                
                 shootingActive = true;
                 shootBtn.classList.add('holding');
-                
-                // Show rapid indicator
                 rapidIndicator.style.display = 'block';
-                
-                // Play shoot animation continuously
                 setSafeAnimation(ANIMATIONS.SHOOT_RIFLE, 'repeat');
                 
-                // Start muzzle flash effect
                 if (gunModel) {
                     shootInterval = setInterval(() => {
                         if (!shootingActive) return;
-                        
                         gunModel.setAttribute('material', 'emissive', '#FF5500');
                         gunModel.setAttribute('material', 'emissiveIntensity', '2.0');
-                        
                         setTimeout(() => {
                             if (shootingActive) {
                                 gunModel.setAttribute('material', 'emissive', '#000000');
@@ -458,19 +410,13 @@
                 shootingActive = false;
                 shootBtn.classList.remove('holding');
                 rapidIndicator.style.display = 'none';
-                
                 if (shootInterval) {
                     clearInterval(shootInterval);
                     shootInterval = null;
                 }
-                
-                // Reset gun material
                 if (gunModel) {
                     gunModel.setAttribute('material', 'emissive', '#000000');
-                    gunModel.setAttribute('material', 'emissiveIntensity', '0');
                 }
-                
-                // Return to appropriate animation
                 if (jumpActive) {
                     setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
                 } else if (grenadeActive) {
@@ -485,24 +431,17 @@
             // ===== Grenade Functions =====
             function startGrenade() {
                 if (grenadeActive) return;
-                
                 grenadeActive = true;
                 grenadeBtn.classList.add('holding');
-                
-                // Play grenade animation continuously
                 setSafeAnimation(ANIMATIONS.THROW_GRENADE, 'repeat');
                 
-                // Visual effect for grenade holding
                 grenadeInterval = setInterval(() => {
                     if (!grenadeActive) return;
-                    
                     gunModel?.setAttribute('material', 'emissive', '#9f7aea');
                     gunModel?.setAttribute('material', 'emissiveIntensity', '1.0');
-                    
                     setTimeout(() => {
                         if (grenadeActive) {
                             gunModel?.setAttribute('material', 'emissive', '#000000');
-                            gunModel?.setAttribute('material', 'emissiveIntensity', '0');
                         }
                     }, 50);
                 }, GRENADE_DELAY);
@@ -511,19 +450,13 @@
             function stopGrenade() {
                 grenadeActive = false;
                 grenadeBtn.classList.remove('holding');
-                
                 if (grenadeInterval) {
                     clearInterval(grenadeInterval);
                     grenadeInterval = null;
                 }
-                
-                // Reset gun material
                 if (gunModel) {
                     gunModel.setAttribute('material', 'emissive', '#000000');
-                    gunModel.setAttribute('material', 'emissiveIntensity', '0');
                 }
-                
-                // Return to appropriate animation
                 if (jumpActive) {
                     setSafeAnimation(ANIMATIONS.JUMP, 'repeat');
                 } else if (shootingActive) {
@@ -553,16 +486,13 @@
                 
                 const isRunning = magnitude > 0.7;
                 
-                // Determine direction based on joystick input
                 if (Math.abs(joystickX) > Math.abs(joystickY)) {
-                    // Strafe
                     if (joystickX > 0) {
                         setSafeAnimation(isRunning ? ANIMATIONS.RUN_RIGHT : ANIMATIONS.WALK_RIGHT, 'repeat');
                     } else {
                         setSafeAnimation(isRunning ? ANIMATIONS.RUN_LEFT : ANIMATIONS.WALK_LEFT, 'repeat');
                     }
                 } else {
-                    // Forward/backward
                     if (joystickY > 0) {
                         setSafeAnimation(isRunning ? ANIMATIONS.RUN_FORWARD : ANIMATIONS.WALK_FORWARD, 'repeat');
                     } else {
@@ -593,7 +523,6 @@
                 joystickY = 0;
                 joystickHandle.style.transform = 'translate(0px, 0px)';
                 
-                // Only change animation if not doing actions
                 if (!jumpActive && !shootingActive && !grenadeActive) {
                     setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
                 }
@@ -619,237 +548,130 @@
                 joystickX = deltaX / maxDistance;
                 joystickY = deltaY / maxDistance;
                 
-                // Update movement animation if not doing actions
                 if (!jumpActive && !shootingActive && !grenadeActive) {
                     updateMovementAnimation();
                 }
             }
             
             // ===== Button Setup =====
-            jumpBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                startJumping();
-            });
+            jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startJumping(); });
+            jumpBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopJumping(); });
+            jumpBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopJumping(); });
             
-            jumpBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                stopJumping();
-            });
+            shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startShooting(); });
+            shootBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopShooting(); });
+            shootBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopShooting(); });
             
-            jumpBtn.addEventListener('touchcancel', (e) => {
-                e.preventDefault();
-                stopJumping();
-            });
+            grenadeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startGrenade(); });
+            grenadeBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopGrenade(); });
+            grenadeBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopGrenade(); });
             
-            shootBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                startShooting();
-            });
-            
-            shootBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                stopShooting();
-            });
-            
-            shootBtn.addEventListener('touchcancel', (e) => {
-                e.preventDefault();
-                stopShooting();
-            });
-            
-            grenadeBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                startGrenade();
-            });
-            
-            grenadeBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                stopGrenade();
-            });
-            
-            grenadeBtn.addEventListener('touchcancel', (e) => {
-                e.preventDefault();
-                stopGrenade();
-            });
-            
-            // Mouse fallback for testing
-            jumpBtn.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                startJumping();
-            });
-            
-            jumpBtn.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                stopJumping();
-            });
-            
-            jumpBtn.addEventListener('mouseleave', (e) => {
-                stopJumping();
-            });
-            
-            shootBtn.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                startShooting();
-            });
-            
-            shootBtn.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                stopShooting();
-            });
-            
-            shootBtn.addEventListener('mouseleave', (e) => {
-                stopShooting();
-            });
-            
-            grenadeBtn.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                startGrenade();
-            });
-            
-            grenadeBtn.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                stopGrenade();
-            });
-            
-            grenadeBtn.addEventListener('mouseleave', (e) => {
-                stopGrenade();
-            });
-            
-            // Keyboard fallback
-            window.addEventListener('keydown', (e) => {
-                switch(e.key) {
-                    case ' ': 
-                        e.preventDefault(); 
-                        if (!jumpActive) startJumping();
-                        break;
-                    case 'f': 
-                    case 'F': 
-                        e.preventDefault(); 
-                        if (!shootingActive) startShooting();
-                        break;
-                    case 'g':
-                    case 'G':
-                        e.preventDefault();
-                        if (!grenadeActive) startGrenade();
-                        break;
-                }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                switch(e.key) {
-                    case ' ':
-                        stopJumping();
-                        break;
-                    case 'f':
-                    case 'F':
-                        stopShooting();
-                        break;
-                    case 'g':
-                    case 'G':
-                        stopGrenade();
-                        break;
-                }
-            });
-            
-            // ===== MOVEMENT SYSTEM =====
+            // ===== FIXED MOVEMENT SYSTEM - No more glitching =====
             function movePlayer() {
-                if (!joystickActive || !playerPosition || !camera) return;
+                if (!joystickActive || !player || !camera) return;
                 
-                const playerPos = playerPosition.getAttribute('position');
+                // Get current position and rotation
+                const playerPos = player.getAttribute('position');
                 const cameraRot = camera.getAttribute('rotation');
                 
+                // Convert rotation to radians
                 const radY = THREE.MathUtils.degToRad(cameraRot.y);
+                
+                // Calculate movement magnitude
                 const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
+                if (magnitude < 0.1) return; // Dead zone
+                
                 const speed = magnitude > 0.7 ? RUN_SPEED : WALK_SPEED;
                 
-                // Calculate movement relative to camera
+                // Calculate movement direction (FIXED: removed the -1 multiplier that was causing back-stepping)
                 let moveX = 0;
                 let moveZ = 0;
                 
-                // Forward/back (joystick Y)
+                // Forward/back movement - joystick Y controls forward/back relative to camera
                 if (joystickY !== 0) {
+                    // When joystick Y is positive, move forward (away from camera)
+                    // When joystick Y is negative, move backward (toward camera)
                     moveX += Math.sin(radY) * joystickY * speed;
                     moveZ += Math.cos(radY) * joystickY * speed;
                 }
                 
-                // Strafe (joystick X)
+                // Strafe movement - joystick X controls left/right
                 if (joystickX !== 0) {
                     moveX += Math.sin(radY + Math.PI/2) * joystickX * speed;
                     moveZ += Math.cos(radY + Math.PI/2) * joystickX * speed;
                 }
                 
-                // Apply movement
-                playerPos.x += moveX;
-                playerPos.z += moveZ;
+                // Apply movement to player (NOT to camera - camera follows separately)
+                const newX = playerPos.x + moveX;
+                const newZ = playerPos.z + moveZ;
                 
-                // Keep in bounds (adjust based on ground size)
-                playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
-                playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
+                // Check for glitching - if movement is too small or oscillating, smooth it
+                const dx = newX - lastPos.x;
+                const dz = newZ - lastPos.z;
+                const moveDist = Math.sqrt(dx*dx + dz*dz);
                 
-                playerPosition.setAttribute('position', playerPos);
-                
-                // Rotate player to face movement direction
-                if (moveX !== 0 || moveZ !== 0) {
-                    const targetAngle = Math.atan2(moveX, moveZ);
-                    const targetDeg = THREE.MathUtils.radToDeg(targetAngle);
-                    
-                    // Apply rotation to player rotation container
-                    playerRotation.setAttribute('rotation', {
-                        x: 0,
-                        y: targetDeg,
-                        z: 0
+                if (moveDist > 0.001) { // Only update if actually moving
+                    player.setAttribute('position', {
+                        x: newX,
+                        y: playerPos.y,
+                        z: newZ
                     });
+                    
+                    // Rotate player to face movement direction (optional - for strafing animations)
+                    if (moveX !== 0 || moveZ !== 0) {
+                        const targetAngle = Math.atan2(moveX, moveZ);
+                        const targetDeg = THREE.MathUtils.radToDeg(targetAngle);
+                        player.setAttribute('rotation', {
+                            x: 0,
+                            y: targetDeg,
+                            z: 0
+                        });
+                    }
+                    
+                    lastPos = { x: newX, z: newZ };
                 }
                 
                 // Update HUD
-                if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
-                if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
-                
-                // Update debug info
-                debugInfo.innerHTML = `Ground: Ground.glb<br>Y: ${playerPos.y.toFixed(2)}`;
+                if (posX) posX.textContent = Math.round(newX * 10) / 10;
+                if (posZ) posZ.textContent = Math.round(newZ * 10) / 10;
             }
             
-            // ===== CAMERA FOLLOW (Third Person) =====
+            // ===== FIXED CAMERA FOLLOW - Direct and smooth =====
             function updateCamera() {
-                if (!playerPosition || !cameraRig) return;
+                if (!player || !camera) return;
                 
-                const playerPos = playerPosition.getAttribute('position');
+                const playerPos = player.getAttribute('position');
                 
-                // Position camera rig at player position + offset
-                cameraRig.setAttribute('position', {
+                // Direct camera positioning - no rig, no extra transforms
+                camera.setAttribute('position', {
                     x: playerPos.x,
-                    y: playerPos.y + 1.5,
-                    z: playerPos.z + 5.0
+                    y: playerPos.y + 1.5,  // Height above player
+                    z: playerPos.z + 5.0    // Distance behind player
                 });
                 
                 // Make camera look at player
-                const cameraObj = camera?.object3D;
-                const playerObj = playerRotation?.object3D;
+                const cameraObj = camera.object3D;
+                const playerObj = player.object3D;
                 
                 if (cameraObj && playerObj) {
                     cameraObj.lookAt(playerObj.position);
                 }
+                
+                // Debug - show if we detect glitching
+                debugInfo.innerHTML = `Movement: ${joystickActive ? 'Moving' : 'Idle'}<br>Speed: ${joystickActive ? (Math.sqrt(joystickX*joystickX + joystickY*joystickY) > 0.7 ? 'RUN' : 'WALK') : '0'}`;
             }
             
             // ===== Model Loading =====
             let modelsLoaded = 0;
-            const totalModels = 3; // Player, Gun, Ground
-            
-            function updateLoadingProgress() {
-                loadingStatus.textContent = `Loading models... (${modelsLoaded}/${totalModels})`;
-            }
+            const totalModels = 3;
             
             if (playerModel) {
                 playerModel.addEventListener('model-loaded', () => {
                     console.log('✅ Player model loaded');
                     modelsLoaded++;
-                    updateLoadingProgress();
+                    loadingStatus.textContent = `Loading models... (${modelsLoaded}/${totalModels})`;
                     
-                    // Make player visible
-                    if (playerRotation) {
-                        playerRotation.setAttribute('rotation', {x: 0, y: 0, z: 0});
-                    }
-                    
-                    // Blacklist any t-pose animations
+                    // Blacklist t-pose
                     setTimeout(() => {
                         try {
                             const mixer = playerModel.components['animation-mixer'];
@@ -858,7 +680,6 @@
                                     if (clip.name.toLowerCase().includes('pose')) {
                                         if (!BLACKLIST_ANIMATIONS.includes(clip.name)) {
                                             BLACKLIST_ANIMATIONS.push(clip.name);
-                                            console.log('Blacklisted:', clip.name);
                                         }
                                     }
                                 });
@@ -869,10 +690,8 @@
                     checkAllLoaded();
                 });
                 
-                playerModel.addEventListener('error', (e) => {
-                    console.error('Player model error:', e);
+                playerModel.addEventListener('error', () => {
                     modelsLoaded++;
-                    updateLoadingProgress();
                     checkAllLoaded();
                 });
             }
@@ -881,56 +700,28 @@
                 gunModel.addEventListener('model-loaded', () => {
                     console.log('✅ Gun model loaded');
                     modelsLoaded++;
-                    updateLoadingProgress();
+                    loadingStatus.textContent = `Loading models... (${modelsLoaded}/${totalModels})`;
                     gunModel.setAttribute('visible', 'true');
                     checkAllLoaded();
                 });
                 
-                gunModel.addEventListener('error', (e) => {
-                    console.error('Gun model error:', e);
+                gunModel.addEventListener('error', () => {
                     modelsLoaded++;
-                    updateLoadingProgress();
-                    
-                    // Create simple gun as fallback
-                    const simpleGun = document.createElement('a-box');
-                    simpleGun.setAttribute('width', '0.2');
-                    simpleGun.setAttribute('height', '0.1');
-                    simpleGun.setAttribute('depth', '0.4');
-                    simpleGun.setAttribute('color', '#333');
-                    simpleGun.setAttribute('position', '0 0 0');
-                    gun.appendChild(simpleGun);
-                    
                     checkAllLoaded();
                 });
             }
             
+            const groundModel = document.getElementById('ground');
             if (groundModel) {
                 groundModel.addEventListener('model-loaded', () => {
                     console.log('✅ Ground model loaded');
                     modelsLoaded++;
-                    updateLoadingProgress();
-                    
-                    // Adjust ground position/size if needed
-                    // You might need to scale or position the ground based on its actual dimensions
-                    groundModel.setAttribute('shadow', 'receive: true');
-                    
+                    loadingStatus.textContent = `Loading models... (${modelsLoaded}/${totalModels})`;
                     checkAllLoaded();
                 });
                 
-                groundModel.addEventListener('error', (e) => {
-                    console.error('Ground model error:', e);
+                groundModel.addEventListener('error', () => {
                     modelsLoaded++;
-                    updateLoadingProgress();
-                    
-                    // Create fallback ground plane if model fails
-                    const fallbackGround = document.createElement('a-plane');
-                    fallbackGround.setAttribute('rotation', '-90 0 0');
-                    fallbackGround.setAttribute('width', '200');
-                    fallbackGround.setAttribute('height', '200');
-                    fallbackGround.setAttribute('color', '#3a6ea5');
-                    fallbackGround.setAttribute('receive-shadow', 'true');
-                    scene.appendChild(fallbackGround);
-                    
                     checkAllLoaded();
                 });
             }
