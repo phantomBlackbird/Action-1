@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini World Explorer - Smooth Movement Fix</title>
+    <title>Mini World Explorer - Animation Sync Fixed</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
@@ -139,7 +139,7 @@
     <div id="loading-screen">
         <div class="loading-content">
             <h1>🌍 MINI WORLD EXPLORER</h1>
-            <h3>Smooth Movement Fix</h3>
+            <h3>Animation Sync Fixed</h3>
             <div class="spinner"></div>
             <div id="loading-status">Loading Player.glb...</div>
         </div>
@@ -154,7 +154,7 @@
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
     <div id="rapid-indicator">🔥 RAPID FIRE</div>
-    <div id="debug-info">Movement: Smooth Fixed</div>
+    <div id="debug-info">Animation Sync: Fixed</div>
 
     <div id="touch-controls">
         <div class="joystick-area" id="move-joystick">
@@ -185,12 +185,12 @@
             static-body>
         </a-gltf-model>
 
-        <!-- Player - SIMPLIFIED STRUCTURE to prevent glitching -->
+        <!-- Player - Fixed structure -->
         <a-entity id="player" position="0 0.18 0">
             <a-gltf-model 
                 id="player-model-instance" 
                 src="#player-model"
-                scale="0.025 0.025 0.025"
+                scale="0.020 0.020 0.020"
                 animation-mixer="clip: idle; loop: repeat; crossFadeDuration: 0.1"
                 shadow="cast: true; receive: true">
             </a-gltf-model>
@@ -205,7 +205,7 @@
             </a-entity>
         </a-entity>
 
-        <!-- Camera - Directly follows player position -->
+        <!-- Camera -->
         <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true" position="0 1.5 5.0"></a-camera>
         
         <!-- Lighting -->
@@ -216,7 +216,7 @@
     
     <script>
         (function() {
-            console.log('Starting Mini World Explorer with Smooth Movement Fix...');
+            console.log('Starting Mini World Explorer with Animation Sync Fix...');
             
             // ===== ANIMATION MAPPING =====
             const ANIMATIONS = {
@@ -266,9 +266,9 @@
             let shootInterval = null;
             let grenadeInterval = null;
             
-            // Movement speed
-            const WALK_SPEED = 0.06;
-            const RUN_SPEED = 0.105;
+            // Movement speed - ADJUSTED to match animation speed
+            const WALK_SPEED = 0.045;  // Reduced to match walk animation cycle
+            const RUN_SPEED = 0.08;     // Reduced to match run animation cycle
             
             // Rapid fire settings
             const RAPID_FIRE_DELAY = 100;
@@ -286,13 +286,19 @@
             const playerModel = document.getElementById('player-model-instance');
             const gunModel = document.getElementById('gun-model-instance');
             
-            // Store last position to detect glitching
-            let lastPos = { x: 0, z: 0 };
-            let glitchCounter = 0;
+            // Track animation state
+            let currentAnim = ANIMATIONS.IDLE;
+            let lastMoveTime = 0;
+            let moveDirection = { x: 0, z: 0 };
             
             // ===== Safe Animation Function =====
             function setSafeAnimation(animName, loopType = 'repeat') {
                 if (!playerModel) return;
+                
+                // Don't re-set the same animation (prevents animation restart glitch)
+                if (currentAnim === animName && loopType === 'repeat') {
+                    return;
+                }
                 
                 if (BLACKLIST_ANIMATIONS.includes(animName)) {
                     animName = ANIMATIONS.IDLE;
@@ -307,6 +313,7 @@
                 else if (animName === ANIMATIONS.THROW_GRENADE) displayName = '💣 GRENADE';
                 
                 animStatus.textContent = displayName;
+                currentAnim = animName;
                 
                 try {
                     playerModel.setAttribute('animation-mixer', {
@@ -508,12 +515,16 @@
             moveJoystick.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 joystickActive = true;
+                lastMoveTime = Date.now();
                 updateJoystick(e.touches[0]);
             });
             
             moveJoystick.addEventListener('touchmove', (e) => {
                 e.preventDefault();
-                if (joystickActive) updateJoystick(e.touches[0]);
+                if (joystickActive) {
+                    lastMoveTime = Date.now();
+                    updateJoystick(e.touches[0]);
+                }
             });
             
             moveJoystick.addEventListener('touchend', (e) => {
@@ -522,6 +533,7 @@
                 joystickX = 0;
                 joystickY = 0;
                 joystickHandle.style.transform = 'translate(0px, 0px)';
+                moveDirection = { x: 0, z: 0 };
                 
                 if (!jumpActive && !shootingActive && !grenadeActive) {
                     setSafeAnimation(ANIMATIONS.IDLE, 'repeat');
@@ -566,7 +578,7 @@
             grenadeBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopGrenade(); });
             grenadeBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopGrenade(); });
             
-            // ===== FIXED MOVEMENT SYSTEM - No more glitching =====
+            // ===== FIXED MOVEMENT SYSTEM - Continuous movement =====
             function movePlayer() {
                 if (!joystickActive || !player || !camera) return;
                 
@@ -581,84 +593,80 @@
                 const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
                 if (magnitude < 0.1) return; // Dead zone
                 
-                const speed = magnitude > 0.7 ? RUN_SPEED : WALK_SPEED;
+                // Use time-based movement for smooth continuous motion
+                const deltaTime = 16; // Assume 60fps (16ms per frame)
+                const speed = (magnitude > 0.7 ? RUN_SPEED : WALK_SPEED) * (deltaTime / 16);
                 
-                // Calculate movement direction (FIXED: removed the -1 multiplier that was causing back-stepping)
-                let moveX = 0;
-                let moveZ = 0;
+                // Calculate movement direction based on camera
+                // Forward/back (joystick Y)
+                const moveX = (Math.sin(radY) * joystickY + Math.sin(radY + Math.PI/2) * joystickX) * speed;
+                const moveZ = (Math.cos(radY) * joystickY + Math.cos(radY + Math.PI/2) * joystickX) * speed;
                 
-                // Forward/back movement - joystick Y controls forward/back relative to camera
-                if (joystickY !== 0) {
-                    // When joystick Y is positive, move forward (away from camera)
-                    // When joystick Y is negative, move backward (toward camera)
-                    moveX += Math.sin(radY) * joystickY * speed;
-                    moveZ += Math.cos(radY) * joystickY * speed;
-                }
+                // Apply movement - CONTINUOUS, no reset
+                playerPos.x += moveX;
+                playerPos.z += moveZ;
                 
-                // Strafe movement - joystick X controls left/right
-                if (joystickX !== 0) {
-                    moveX += Math.sin(radY + Math.PI/2) * joystickX * speed;
-                    moveZ += Math.cos(radY + Math.PI/2) * joystickX * speed;
-                }
+                // Keep in bounds
+                playerPos.x = Math.max(-45, Math.min(45, playerPos.x));
+                playerPos.z = Math.max(-45, Math.min(45, playerPos.z));
                 
-                // Apply movement to player (NOT to camera - camera follows separately)
-                const newX = playerPos.x + moveX;
-                const newZ = playerPos.z + moveZ;
+                player.setAttribute('position', playerPos);
                 
-                // Check for glitching - if movement is too small or oscillating, smooth it
-                const dx = newX - lastPos.x;
-                const dz = newZ - lastPos.z;
-                const moveDist = Math.sqrt(dx*dx + dz*dz);
-                
-                if (moveDist > 0.001) { // Only update if actually moving
-                    player.setAttribute('position', {
-                        x: newX,
-                        y: playerPos.y,
-                        z: newZ
-                    });
+                // Rotate player to face movement direction (smoothly)
+                if (Math.abs(moveX) > 0.001 || Math.abs(moveZ) > 0.001) {
+                    const targetAngle = Math.atan2(moveX, moveZ);
+                    const targetDeg = THREE.MathUtils.radToDeg(targetAngle);
                     
-                    // Rotate player to face movement direction (optional - for strafing animations)
-                    if (moveX !== 0 || moveZ !== 0) {
-                        const targetAngle = Math.atan2(moveX, moveZ);
-                        const targetDeg = THREE.MathUtils.radToDeg(targetAngle);
-                        player.setAttribute('rotation', {
-                            x: 0,
-                            y: targetDeg,
-                            z: 0
-                        });
-                    }
+                    // Smooth rotation to prevent snapping
+                    const currentRot = player.getAttribute('rotation') || {x: 0, y: 0, z: 0};
+                    let currentY = currentRot.y;
                     
-                    lastPos = { x: newX, z: newZ };
+                    // Find shortest rotation path
+                    let diff = targetDeg - currentY;
+                    while (diff > 180) diff -= 360;
+                    while (diff < -180) diff += 360;
+                    
+                    // Apply smooth rotation
+                    const newY = currentY + diff * 0.1;
+                    player.setAttribute('rotation', {x: 0, y: newY, z: 0});
                 }
                 
                 // Update HUD
-                if (posX) posX.textContent = Math.round(newX * 10) / 10;
-                if (posZ) posZ.textContent = Math.round(newZ * 10) / 10;
+                if (posX) posX.textContent = Math.round(playerPos.x * 10) / 10;
+                if (posZ) posZ.textContent = Math.round(playerPos.z * 10) / 10;
+                
+                // Debug - show movement info
+                debugInfo.innerHTML = `Move: ${moveX.toFixed(3)}, ${moveZ.toFixed(3)}<br>Anim: ${currentAnim}`;
             }
             
-            // ===== FIXED CAMERA FOLLOW - Direct and smooth =====
+            // ===== CAMERA FOLLOW =====
             function updateCamera() {
                 if (!player || !camera) return;
                 
                 const playerPos = player.getAttribute('position');
                 
-                // Direct camera positioning - no rig, no extra transforms
-                camera.setAttribute('position', {
+                // Smooth camera follow
+                const currentCamPos = camera.getAttribute('position');
+                const targetCamPos = {
                     x: playerPos.x,
-                    y: playerPos.y + 1.5,  // Height above player
-                    z: playerPos.z + 5.0    // Distance behind player
-                });
+                    y: playerPos.y + 1.5,
+                    z: playerPos.z + 5.0
+                };
                 
-                // Make camera look at player
+                // Smooth interpolation
+                currentCamPos.x += (targetCamPos.x - currentCamPos.x) * 0.1;
+                currentCamPos.y += (targetCamPos.y - currentCamPos.y) * 0.1;
+                currentCamPos.z += (targetCamPos.z - currentCamPos.z) * 0.1;
+                
+                camera.setAttribute('position', currentCamPos);
+                
+                // Look at player
                 const cameraObj = camera.object3D;
                 const playerObj = player.object3D;
                 
                 if (cameraObj && playerObj) {
                     cameraObj.lookAt(playerObj.position);
                 }
-                
-                // Debug - show if we detect glitching
-                debugInfo.innerHTML = `Movement: ${joystickActive ? 'Moving' : 'Idle'}<br>Speed: ${joystickActive ? (Math.sqrt(joystickX*joystickX + joystickY*joystickY) > 0.7 ? 'RUN' : 'WALK') : '0'}`;
             }
             
             // ===== Model Loading =====
@@ -671,12 +679,16 @@
                     modelsLoaded++;
                     loadingStatus.textContent = `Loading models... (${modelsLoaded}/${totalModels})`;
                     
-                    // Blacklist t-pose
+                    // Get actual animation durations from the model
                     setTimeout(() => {
                         try {
                             const mixer = playerModel.components['animation-mixer'];
                             if (mixer && mixer.clips) {
+                                console.log('Available animations:');
                                 mixer.clips.forEach(clip => {
+                                    console.log(` - ${clip.name}: ${clip.duration}s`);
+                                    
+                                    // Blacklist t-pose
                                     if (clip.name.toLowerCase().includes('pose')) {
                                         if (!BLACKLIST_ANIMATIONS.includes(clip.name)) {
                                             BLACKLIST_ANIMATIONS.push(clip.name);
@@ -742,15 +754,26 @@
             }
             
             // ===== Game Loop =====
-            function gameLoop() {
-                movePlayer();
-                updateCamera();
+            let lastFrameTime = 0;
+            
+            function gameLoop(currentTime) {
+                // Calculate delta time for smooth movement
+                if (!lastFrameTime) lastFrameTime = currentTime;
+                const deltaTime = currentTime - lastFrameTime;
+                
+                // Only update if delta time is reasonable (prevent huge jumps)
+                if (deltaTime < 100) {
+                    movePlayer();
+                    updateCamera();
+                }
+                
+                lastFrameTime = currentTime;
                 requestAnimationFrame(gameLoop);
             }
             
             scene.addEventListener('loaded', () => {
                 console.log('Scene loaded');
-                gameLoop();
+                requestAnimationFrame(gameLoop);
             });
         })();
     </script>
