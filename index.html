@@ -144,6 +144,12 @@
             <div id="loading-status">Loading Player.glb...</div>
         </div>
     </div>
+
+    <div id="hud">
+        <div class="title">⚔️ MINI EXPLORER</div>
+        <div class="size">Size: <span style="color: #88ff88;">3x (0.009 scale)</span></div>
+        <div>X: <span id="pos-x">0.0</span> Z: <span id="pos-z">0.0</span></div>
+    </div>
     
     <div id="anim-status">IDLE</div>
     <div id="controls-hint">👆 Joystick to move | Hold buttons for actions</div>
@@ -205,7 +211,7 @@
         </a-entity>
 
         <!-- Camera Rig - Third Person View -->
-        <a-entity id="camera-rig" position="0 2.5 7.0">
+        <a-entity id="camera-rig" position="0 1.5 5.0">
             <a-camera id="camera" wasd-controls="enabled: false" look-controls="enabled: true"></a-camera>
         </a-entity>
         
@@ -350,7 +356,7 @@
                 if (!playerPosition) return;
                 
                 // Play jump animation (one-shot)
-                setSafeAnimation(ANIMATIONS.JUMP, 'repeat);
+                setSafeAnimation(ANIMATIONS.JUMP, 'once');
                 
                 // Jump physics
                 const startY = playerPosition.getAttribute('position').y;
@@ -753,7 +759,7 @@
                 
                 const radY = THREE.MathUtils.degToRad(cameraRot.y);
                 const magnitude = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
-                const speed = magnitude > 0.9 ? RUN_SPEED : WALK_SPEED;
+                const speed = magnitude > 0.7 ? RUN_SPEED : WALK_SPEED;
                 
                 // Calculate movement relative to camera
                 let moveX = 0;
@@ -811,8 +817,8 @@
                 // Position camera rig at player position + offset
                 cameraRig.setAttribute('position', {
                     x: playerPos.x,
-                    y: playerPos.y + 2.5,
-                    z: playerPos.z + 7.0
+                    y: playerPos.y + 1.5,
+                    z: playerPos.z + 5.0
                 });
                 
                 // Make camera look at player
